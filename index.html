@@ -381,7 +381,7 @@ function erzeugeUebung(vorlage, ziel, reihenfolge){
   return {
     id: uid(), name: vorlage.name, saetze: k.saetze, gewicht: vorlage.kg,
     wiederholungsMin: k.wMin, wiederholungsMax: k.wMax, zielWiederholungen: k.wMin,
-    gewichtsSteigerung: vorlage.step * k.faktor, reihenfolge
+    gewichtsSteigerung: vorlage.step * k.faktor, reihenfolge, einheit: 'wiederholungen'
   };
 }
 // Passt Sätze/Wdh-Bereich/Steigerung UND das Arbeitsgewicht (Epley-Schätzung) aller
@@ -408,11 +408,24 @@ function wendeTrainingszielAn(ziel, split){
 /* =========================================================================
    Progressions-Rechner (Arbeitssatz-Modell)
    ========================================================================= */
-function berechneProgression(zielGewicht, sollSaetze, gewichtsSteigerung, wMin, wMax, zielWdh, tatsaechlicheSaetze, ziel){
+function berechneProgression(zielGewicht, sollSaetze, gewichtsSteigerung, wMin, wMax, zielWdh, tatsaechlicheSaetze, ziel, einheit){
   const gleich = () => ({ neuesGewicht: zielGewicht, neueZielWiederholungen: zielWdh, status:'gleichBleiben' });
+  // Ein Satz gilt auch als erfuellt, wenn mehr Gewicht bei weniger (aber noch im Bereich
+  // liegenden) Wiederholungen bewegt wurde und die geschaetzte Belastung (Epley) mindestens
+  // der Zielvorgabe entspricht - sonst wuerde ein schwereres Gewicht faelschlich als
+  // "nicht geschafft" gewertet. Bei Zeit-Uebungen (Sekunden) ergibt der Epley-Vergleich
+  // keinen Sinn, dort zaehlt nur der direkte Vergleich.
+  function erfuellt(s){
+    if(s.wiederholungen < wMin) return false;
+    if(s.gewicht >= zielGewicht && s.wiederholungen >= zielWdh) return true;
+    if(einheit === 'sekunden' || s.gewicht <= zielGewicht) return false;
+    const effektivIst = s.gewicht * (1 + s.wiederholungen/30);
+    const effektivZiel = zielGewicht * (1 + zielWdh/30);
+    return effektivIst >= effektivZiel;
+  }
   const arbeitsSaetze = tatsaechlicheSaetze.filter(s => s.gewicht >= zielGewicht);
   if(arbeitsSaetze.length < sollSaetze) return gleich();
-  if(!arbeitsSaetze.every(s => s.wiederholungen >= zielWdh)) return gleich();
+  if(!arbeitsSaetze.every(erfuellt)) return gleich();
   const schritt = wiederholungsSchritt(ziel);
   if(schritt <= 0){
     return { neuesGewicht: zielGewicht + gewichtsSteigerung, neueZielWiederholungen: zielWdh, status:'gewichtRauf' };
@@ -538,11 +551,36 @@ function persoenlicheBestwerte(eintraege){
     e.saetze.forEach(s => {
       const bisher = beste[s.uebungsName];
       if(!bisher || s.gewicht > bisher.gewicht || (s.gewicht === bisher.gewicht && s.wiederholungen > bisher.wiederholungen)){
-        beste[s.uebungsName] = { uebungsName:s.uebungsName, gewicht:s.gewicht, wiederholungen:s.wiederholungen, datum:new Date(e.datum) };
+        beste[s.uebungsName] = { uebungsName:s.uebungsName, gewicht:s.gewicht, wiederholungen:s.wiederholungen, datum:new Date(e.datum), einheit:s.einheit||'wiederholungen' };
       }
     });
   });
   return Object.values(beste).sort((a,b) => a.uebungsName.localeCompare(b.uebungsName));
+}
+
+/// Anzahl der tatsaechlichen Steigerungen (Gewicht oder Wiederholungen rauf) in den Eintraegen.
+function anzahlSteigerungen(eintraege){
+  return eintraege.reduce((sum,e) => sum + (e.fortschritt||[]).filter(f => f.status !== 'gleichBleiben').length, 0);
+}
+
+/// Prozentuale Kraftsteigerung je Uebung: erstes jemals bewegtes Gewicht vs. bestes (hoechstes)
+/// Gewicht ueber die GESAMTE Historie (unabhaengig vom gewaehlten Zeitraum-Filter), da eine
+/// "Gesamtsteigerung seit Trainingsbeginn" per Definition alle Daten braucht. Koerpergewichts-/
+/// Zeit-Uebungen (gewicht 0) werden ausgeschlossen, da 0kg keinen sinnvollen Prozentwert ergibt.
+function gesamtfortschritt(eintraege){
+  const nachName = {};
+  eintraege.slice().sort((a,b) => new Date(a.datum)-new Date(b.datum)).forEach(e => {
+    e.saetze.forEach(s => {
+      if(s.gewicht <= 0) return;
+      if(!nachName[s.uebungsName]) nachName[s.uebungsName] = { erstes: s.gewicht, bestes: s.gewicht };
+      else nachName[s.uebungsName].bestes = Math.max(nachName[s.uebungsName].bestes, s.gewicht);
+    });
+  });
+  const proUebung = Object.entries(nachName)
+    .map(([name, v]) => ({ name, prozent: ((v.bestes - v.erstes) / v.erstes) * 100 }))
+    .sort((a,b) => b.prozent - a.prozent);
+  const schnitt = proUebung.length ? proUebung.reduce((s,x) => s+x.prozent, 0) / proUebung.length : null;
+  return { schnitt, proUebung };
 }
 
 /* =========================================================================
@@ -557,6 +595,8 @@ function shortDate(d){ return d.toLocaleDateString('de-DE',{day:'2-digit',month:
 function germanDate(d){ return d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}); }
 function germanDateTime(d){ return germanDate(d) + ', ' + d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}); }
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function unitLabel(einheit){ return einheit === 'sekunden' ? 'Sek.' : 'Wdh.'; }
+function formatSatz(gewicht, wert, einheit){ return (gewicht>0 ? fmt(gewicht)+' kg × ' : '') + wert + ' ' + unitLabel(einheit); }
 
 function lineChartSVG(points, color, h){
   h = h || 190;
@@ -607,15 +647,31 @@ function loadState(){
     const raw = localStorage.getItem(STORAGE_KEY);
     if(raw){ const parsed = JSON.parse(raw); if(parsed && parsed.split) return parsed; }
   }catch(e){}
-  return { split: seedSplit(), eintraege: [] };
+  // Sofort speichern statt erst bei der naechsten Aktion: sonst wuerde ein Reload
+  // (z.B. iOS wirft die Safari-Seite im Hintergrund aus dem Speicher) vor dem ersten
+  // saveState() einen komplett NEUEN Plan mit neuen IDs erzeugen und alle bereits
+  // getippten (aber noch nicht abgeschlossenen) Satz-Eingaben verwaisen lassen.
+  const fresh = { split: seedSplit(), eintraege: [] };
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh)); }catch(e){}
+  return fresh;
 }
 function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+const EINGABEN_KEY = 'ironlog.eingaben';
+function loadEingaben(){
+  try{
+    const raw = localStorage.getItem(EINGABEN_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return {};
+}
+function saveEingaben(){ try{ localStorage.setItem(EINGABEN_KEY, JSON.stringify(ui.eingaben)); }catch(e){} }
 
 // UI-Zustand (nicht persistiert)
 const ui = {
   tab: 'start',
   trainingTagIndex: 0,
-  eingaben: {},          // uebungId -> {saetze:[{gewicht,wiederholungen}], notiz}
+  eingaben: loadEingaben(), // uebungId -> {saetze:[{gewicht,wiederholungen}], notiz} - persistiert
   trainingMenuOpen: false,
   historieOpen: new Set(),
   statistik: { zeitraum:'monat', uebung:null },
@@ -729,6 +785,7 @@ function renderTraining(){
     const uebungen = tag.uebungen.slice().sort((a,b)=>a.reihenfolge-b.reihenfolge);
     html += `<div style="padding-top:14px;">`;
     uebungen.forEach(uebung => { html += renderUebungCard(uebung); });
+    html += `<div style="padding:0 16px 16px;"><button class="btn-ghost" data-act="openModal" data-arg="uebungHinzufuegen">+ Übung hinzufügen</button></div>`;
     html += `</div>`;
     html += `<div class="sticky-bottom"><button class="btn-primary" data-act="abschliessen">${ICONS.check} Training abschließen</button></div>`;
   } else {
@@ -739,8 +796,9 @@ function renderTraining(){
 }
 
 function renderUebungCard(uebung){
+  const einheit = uebung.einheit || 'wiederholungen';
   const eingabe = ui.eingaben[uebung.id] || leereEingabe(uebung);
-  const vorgabe = uebung.gewicht>0 ? `${fmt(uebung.gewicht)} kg × ${uebung.zielWiederholungen}` : `Ziel: ${uebung.zielWiederholungen}`;
+  const vorgabe = uebung.gewicht>0 ? `${fmt(uebung.gewicht)} kg × ${uebung.zielWiederholungen} ${unitLabel(einheit)}` : `Ziel: ${uebung.zielWiederholungen} ${unitLabel(einheit)}`;
   let rows = '';
   eingabe.saetze.forEach((s,i) => {
     rows += `<div class="satz-row">
@@ -749,17 +807,18 @@ function renderUebungCard(uebung){
       <input type="text" inputmode="decimal" value="${esc(s.gewicht)}" placeholder="0" data-act="input-gewicht" data-uebung="${uebung.id}" data-idx="${i}">
       <span class="unit">kg</span>
       <input type="text" inputmode="numeric" value="${esc(s.wiederholungen)}" placeholder="0" data-act="input-wdh" data-uebung="${uebung.id}" data-idx="${i}">
-      <span class="unit">Wdh.</span>
+      <span class="unit">${unitLabel(einheit)}</span>
     </div>`;
   });
   return `<div class="card uebung-card">
     <div class="uebung-head">
       <div class="name">${esc(uebung.name)}</div>
       <button class="icon-circle" data-act="openModal" data-arg="alternativen" data-uebung="${uebung.id}">${ICONS.swap}</button>
+      <button class="icon-circle" style="background:rgba(255,69,58,0.15); color:var(--iron-danger);" data-act="entferneUebung" data-uebung="${uebung.id}" data-name="${esc(uebung.name)}">🗑</button>
       <div class="badge">${esc(vorgabe)}</div>
     </div>
     <hr class="sep" style="margin:10px 0;">
-    <div class="col-head"><span class="c-satz">Satz</span><span class="c-g">Gewicht</span><span class="c-w">Wdh.</span></div>
+    <div class="col-head"><span class="c-satz">Satz</span><span class="c-g">Gewicht</span><span class="c-w">${unitLabel(einheit)}</span></div>
     ${rows}
     <div class="add-satz"><button data-act="satzHinzufuegen" data-uebung="${uebung.id}">+ Satz hinzufügen</button></div>
     <hr class="sep" style="margin:10px 0;">
@@ -797,7 +856,7 @@ function renderHistCard(eintrag){
     if(!gruppen.length) body += `<div class="muted" style="font-size:13px;">Keine Sätze eingetragen.</div>`;
     gruppen.forEach(g => {
       body += `<div class="hist-group"><div class="ex-name">${esc(g.name)}</div>`;
-      g.saetze.forEach((s,i) => body += `<div class="hist-satz-row"><span class="muted">Satz ${i+1}</span><span>${fmt(s.gewicht)} kg × ${s.wiederholungen}</span></div>`);
+      g.saetze.forEach((s,i) => body += `<div class="hist-satz-row"><span class="muted">Satz ${i+1}</span><span>${formatSatz(s.gewicht, s.wiederholungen, s.einheit)}</span></div>`);
       if(g.notiz) body += `<div class="hist-note">„${esc(g.notiz)}"</div>`;
       body += `</div>`;
     });
@@ -827,6 +886,7 @@ function renderModal(){
     case 'zusammenfassung': return renderZusammenfassungModal();
     case 'bearbeiten': return renderBearbeitenModal();
     case 'alternativen': return renderAlternativenModal();
+    case 'uebungHinzufuegen': return renderUebungHinzufuegenModal();
   }
   return '';
 }
@@ -854,6 +914,9 @@ function renderStatistikModal(){
 
   const volPunkte = volumenVerlauf(aktuell).map(p=>({x:p.datum,y:p.volumen}));
   const gewPunkte = st.uebung ? gewichtsVerlauf(st.uebung, aktuell).map(p=>({x:p.datum,y:p.gewicht})) : [];
+  const fortschritt = gesamtfortschritt(state.eintraege);
+  const uebungFortschritt = st.uebung ? fortschritt.proUebung.find(x=>x.name===st.uebung) : null;
+  const steigerungenCount = anzahlSteigerungen(aktuell);
 
   const body = `
     <div class="segmented">${['woche','monat','gesamt'].map(z=>`<button class="${st.zeitraum===z?'active':''}" data-act="statZeitraum" data-arg="${z}">${z==='woche'?'Diese Woche':z==='monat'?'Dieser Monat':'Gesamt'}</button>`).join('')}</div>
@@ -866,8 +929,24 @@ function renderStatistikModal(){
       ${volPunkte.length>=2 ? lineChartSVG(volPunkte,'#1E90FF') : `<div class="empty-hint">Noch nicht genug Daten – schließ ein paar Trainings ab, um den Verlauf zu sehen.</div>`}
     </div>
     <div class="card" style="margin-top:16px;">
+      <div class="section-h">Gesamtfortschritt</div>
+      <div style="display:flex; gap:28px;">
+        <div>
+          <div class="muted" style="font-size:12px;">Ø Kraftzuwachs</div>
+          <div style="font-size:22px; font-weight:700; color:var(--iron-good);">${fortschritt.schnitt!==null ? (fortschritt.schnitt>=0?'+':'')+Math.round(fortschritt.schnitt)+'%' : '–'}</div>
+          <div class="muted" style="font-size:11px;">seit Trainingsbeginn</div>
+        </div>
+        <div>
+          <div class="muted" style="font-size:12px;">Steigerungen</div>
+          <div style="font-size:22px; font-weight:700;">${steigerungenCount}</div>
+          <div class="muted" style="font-size:11px;">${st.zeitraum==='woche'?'diese Woche':st.zeitraum==='monat'?'diesen Monat':'insgesamt'}</div>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px;">
       <div class="section-h">Gewichts-Fortschritt</div>
       ${namen.length ? `<select onchange="onStatUebungChange(this.value)" style="width:100%; background:var(--iron-input); color:#fff; border:none; border-radius:8px; padding:10px; font-size:14px; margin-bottom:10px;">${namen.map(n=>`<option value="${esc(n)}" ${n===st.uebung?'selected':''}>${esc(n)}</option>`).join('')}</select>` : `<div class="empty-hint">Noch keine Übungen in der Historie.</div>`}
+      ${uebungFortschritt ? `<div class="muted" style="font-size:12px; margin-bottom:8px;">${uebungFortschritt.prozent>=0?'+':''}${Math.round(uebungFortschritt.prozent)}% seit Beginn bei dieser Übung</div>` : ''}
       ${namen.length ? (gewPunkte.length>=2 ? lineChartSVG(gewPunkte,'#00BFFF') : `<div class="empty-hint">Noch nicht genug Daten für diese Übung im gewählten Zeitraum.</div>`) : ''}
     </div>
     <div class="card" style="margin-top:16px;">
@@ -938,11 +1017,12 @@ function statusInfo(status){
   if(status==='wiederholungenRauf') return {cls:'reps', icon:'➕'};
   return {cls:'same', icon:'➖'};
 }
-function naechsteVorgabe(erg){
-  const g = fmt(erg.neuesGewicht), w = erg.neueZielWiederholungen;
-  if(erg.status==='gewichtRauf') return `Nächstes Mal: ${g} kg × ${w} Wdh. – Gewicht rauf!`;
-  if(erg.status==='wiederholungenRauf') return `Nächstes Mal: ${g} kg × ${w} Wdh. – Wiederholungen rauf!`;
-  return `Nächstes Mal: ${g} kg × ${w} Wdh. – Gleiche Vorgabe`;
+function naechsteVorgabe(erg, einheit){
+  const einh = unitLabel(einheit);
+  const vorgabeText = erg.neuesGewicht>0 ? `${fmt(erg.neuesGewicht)} kg × ${erg.neueZielWiederholungen} ${einh}` : `${erg.neueZielWiederholungen} ${einh}`;
+  if(erg.status==='gewichtRauf') return `Nächstes Mal: ${vorgabeText} – Gewicht rauf!`;
+  if(erg.status==='wiederholungenRauf') return `Nächstes Mal: ${vorgabeText} – ${einh} rauf!`;
+  return `Nächstes Mal: ${vorgabeText} – Gleiche Vorgabe`;
 }
 function renderAbschlussModal(){
   const vorschau = ui.modal.vorschau;
@@ -952,9 +1032,9 @@ function renderAbschlussModal(){
       return `<div class="card" style="margin-bottom:12px;">
         <div style="font-weight:700;">${esc(z.uebungName)}</div>
         <hr class="sep" style="margin:8px 0;">
-        ${z.ausgefuellteSaetze.length ? z.ausgefuellteSaetze.map((s,i)=>`<div class="hist-satz-row"><span class="muted">Satz ${i+1}</span><span>${fmt(s.gewicht)} kg × ${s.wiederholungen} Wdh.</span></div>`).join('') : `<div class="muted" style="font-size:14px;">Keine Sätze eingetragen.</div>`}
+        ${z.ausgefuellteSaetze.length ? z.ausgefuellteSaetze.map((s,i)=>`<div class="hist-satz-row"><span class="muted">Satz ${i+1}</span><span>${formatSatz(s.gewicht, s.wiederholungen, z.einheit)}</span></div>`).join('') : `<div class="muted" style="font-size:14px;">Keine Sätze eingetragen.</div>`}
         ${z.notizText ? `<div class="hist-note" style="margin-top:6px;">„${esc(z.notizText)}"</div>` : ''}
-        <div class="status-pill ${si.cls}">${si.icon} ${naechsteVorgabe(z.ergebnis)}</div>
+        <div class="status-pill ${si.cls}">${si.icon} ${naechsteVorgabe(z.ergebnis, z.einheit)}</div>
       </div>`;
     }).join('')}`;
   const footer = `<button class="btn-primary" data-act="bestaetigeAbschluss">${ICONS.check} Bestätigen und abschließen</button>`;
@@ -969,8 +1049,8 @@ function renderZusammenfassungModal(){
     return `<div class="card" style="margin-bottom:10px;">
       <div style="font-weight:700;">${esc(z.uebungName)}</div>
       <hr class="sep" style="margin:8px 0;">
-      ${z.geleisteteSaetze.length ? z.geleisteteSaetze.map((s,i)=>`<div class="hist-satz-row"><span class="muted">Satz ${i+1}</span><span>${fmt(s.gewicht)} kg × ${s.wiederholungen} Wdh.</span></div>`).join('') : `<div class="muted" style="font-size:14px;">Keine Sätze eingetragen.</div>`}
-      <div class="status-pill ${si.cls}">${si.icon} ${naechsteVorgabe(z.ergebnis)}</div>
+      ${z.geleisteteSaetze.length ? z.geleisteteSaetze.map((s,i)=>`<div class="hist-satz-row"><span class="muted">Satz ${i+1}</span><span>${formatSatz(s.gewicht, s.wiederholungen, z.einheit)}</span></div>`).join('') : `<div class="muted" style="font-size:14px;">Keine Sätze eingetragen.</div>`}
+      <div class="status-pill ${si.cls}">${si.icon} ${naechsteVorgabe(z.ergebnis, z.einheit)}</div>
     </div>`;
   }).join('');
   return sheet('Auswertung', {act:'', label:''}, {act:'closeModal', label:'Fertig'}, body);
@@ -989,7 +1069,7 @@ function renderBearbeitenModal(){
         <input type="text" inputmode="decimal" style="width:64px; text-align:right; margin-left:auto;" value="${esc(fmt(s.gewicht))}" data-act="edit-gewicht" data-satz="${s.id}">
         <span class="unit">kg</span>
         <input type="text" inputmode="numeric" style="width:54px; text-align:right;" value="${esc(String(s.wiederholungen))}" data-act="edit-wdh" data-satz="${s.id}">
-        <span class="unit">Wdh.</span>
+        <span class="unit">${unitLabel(s.einheit)}</span>
       </div>`).join('')}
       <textarea rows="1" placeholder="Notiz (optional)" style="width:100%; margin-top:8px;" data-act="edit-notiz" data-name="${esc(g.name)}">${esc(g.notiz||'')}</textarea>
     </div>`).join('');
@@ -1025,6 +1105,48 @@ function renderAlternativenModal(){
   return sheet('Übung tauschen', {act:'closeModal', label:'Abbrechen'}, null, body);
 }
 
+/* ---- Uebung hinzufuegen (aus Bibliothek oder eigene) ---- */
+function renderBibliothekListe(filterText){
+  const q = (filterText||'').trim().toLowerCase();
+  const treffer = BIBLIOTHEK.filter(v => !q || v.name.toLowerCase().includes(q)).slice(0,40);
+  return `<div style="border-radius:14px; overflow:hidden;">
+    ${treffer.map((v,i) => `<div class="alt-item" data-act="uebungAusBibliothek" data-name="${esc(v.name)}">
+      <div><div class="name">${esc(v.name)}</div><div class="meta">${GRUPPEN_KURZ[v.gruppe]} · ${v.saetze} Sätze · ${v.wMin}–${v.wMax} Wdh.</div></div>
+      <div class="muted">${ICONS.chevron}</div>
+    </div>${i<treffer.length-1?'<hr class="sep">':''}`).join('')}
+    ${!treffer.length ? `<div class="empty-hint">Keine Treffer.</div>` : ''}
+  </div>`;
+}
+function renderUebungHinzufuegenModal(){
+  const m = ui.modal;
+  const tabBar = `<div class="segmented" style="margin-bottom:14px;">
+    <button class="${m.tab==='bibliothek'?'active':''}" data-act="uebungTab" data-arg="bibliothek">Aus Bibliothek</button>
+    <button class="${m.tab==='eigene'?'active':''}" data-act="uebungTab" data-arg="eigene">Eigene Übung</button>
+  </div>`;
+  let body;
+  if(m.tab === 'bibliothek'){
+    body = `${tabBar}
+      <input type="text" placeholder="Übung suchen…" value="${esc(m.filter)}" id="uebungFilterInput" data-act="uebungFilter" style="width:100%; margin-bottom:12px;">
+      <div id="uebungFilterResults">${renderBibliothekListe(m.filter)}</div>`;
+  } else {
+    const c = m.custom;
+    body = `${tabBar}
+      <div class="field-row"><span class="lbl" style="min-width:90px;">Name</span><input type="text" style="flex:1;" value="${esc(c.name)}" data-act="customName" placeholder="z.B. Sit-ups"></div>
+      <div class="segmented" style="margin:10px 0;">
+        <button class="${c.einheit==='wiederholungen'?'active':''}" data-act="customEinheit" data-arg="wiederholungen">Wiederholungen</button>
+        <button class="${c.einheit==='sekunden'?'active':''}" data-act="customEinheit" data-arg="sekunden">Sekunden</button>
+      </div>
+      <div class="field-row"><span class="lbl" style="min-width:90px;">Sätze</span><input type="text" inputmode="numeric" style="width:60px;" value="${esc(String(c.saetze))}" data-act="customField" data-field="saetze"></div>
+      <div class="field-row"><span class="lbl" style="min-width:90px;">${unitLabel(c.einheit)} Min–Max</span>
+        <input type="text" inputmode="numeric" style="width:54px;" value="${esc(String(c.wMin))}" data-act="customField" data-field="wMin"> – <input type="text" inputmode="numeric" style="width:54px;" value="${esc(String(c.wMax))}" data-act="customField" data-field="wMax">
+      </div>
+      <div class="field-row"><span class="lbl" style="min-width:90px;">Gewicht (kg)</span><input type="text" inputmode="decimal" style="width:70px;" value="${esc(String(c.gewicht))}" data-act="customField" data-field="gewicht"><span class="muted" style="font-size:12px; margin-left:8px;">0 = Körpergewicht</span></div>
+      <div class="field-row"><span class="lbl" style="min-width:90px;">Steigerung (kg)</span><input type="text" inputmode="decimal" style="width:70px;" value="${esc(String(c.step))}" data-act="customField" data-field="step"></div>
+      <button class="btn-primary" style="margin-top:16px;" data-act="uebungEigeneHinzufuegen">${ICONS.check} Übung hinzufügen</button>`;
+  }
+  return sheet('Übung hinzufügen', {act:'closeModal', label:'Abbrechen'}, null, body);
+}
+
 /* =========================================================================
    Aktionen
    ========================================================================= */
@@ -1033,6 +1155,7 @@ function openModal(type, ctx){
   ui.trainingMenuOpen = false;
   if(type==='plangenerator') ui.modal = { type, schritt:1, typ:'dreier', vorschauPlan:null };
   else if(type==='alternativen') ui.modal = { type, uebungId: ctx.uebung };
+  else if(type==='uebungHinzufuegen') ui.modal = { type, tagId: gewaehlterTag()?.id, tab:'bibliothek', filter:'', custom:{name:'',einheit:'wiederholungen',saetze:3,wMin:8,wMax:12,gewicht:0,step:2.5} };
   else ui.modal = { type };
   render();
 }
@@ -1052,12 +1175,12 @@ function onRootClick(e){
       const eing = ui.eingaben[el.dataset.uebung];
       const letzter = eing.saetze[eing.saetze.length-1] || {gewicht:'',wiederholungen:''};
       eing.saetze.push({gewicht:letzter.gewicht, wiederholungen:letzter.wiederholungen});
-      render(); break;
+      saveEingaben(); render(); break;
     }
     case 'satzEntfernen': {
       const eing = ui.eingaben[el.dataset.uebung];
       if(eing.saetze.length>1) eing.saetze.splice(parseInt(el.dataset.idx,10),1);
-      render(); break;
+      saveEingaben(); render(); break;
     }
     case 'abschliessen': bereiteAbschlussVor(); break;
     case 'bestaetigeAbschluss': bestaetigeAbschluss(); break;
@@ -1103,6 +1226,50 @@ function onRootClick(e){
     }
     case 'tauscheUebung': tauscheUebung(el.dataset.uebung, el.dataset.name); break;
     case 'statZeitraum': ui.statistik.zeitraum = arg; render(); break;
+    case 'entferneUebung': entferneUebung(el.dataset.uebung, el.dataset.name); break;
+    case 'uebungTab': ui.modal.tab = arg; render(); break;
+    case 'uebungAusBibliothek': {
+      const vorlage = findVorlage(el.dataset.name);
+      const tag = state.split.tage.find(t => t.id === ui.modal.tagId);
+      if(tag && vorlage){
+        const maxR = tag.uebungen.length ? Math.max(...tag.uebungen.map(u=>u.reihenfolge)) : -1;
+        const neu = erzeugeUebung(vorlage, state.split.trainingsziel, maxR+1);
+        tag.uebungen.push(neu);
+        ui.eingaben[neu.id] = leereEingabe(neu);
+        saveState(); saveEingaben();
+      }
+      ui.modal = null; render(); break;
+    }
+    case 'customEinheit': {
+      ui.modal.custom.einheit = arg;
+      if(arg==='sekunden' && ui.modal.custom.wMin===8 && ui.modal.custom.wMax===12){ ui.modal.custom.wMin=20; ui.modal.custom.wMax=40; }
+      if(arg==='wiederholungen' && ui.modal.custom.wMin===20 && ui.modal.custom.wMax===40){ ui.modal.custom.wMin=8; ui.modal.custom.wMax=12; }
+      render(); break;
+    }
+    case 'uebungEigeneHinzufuegen': {
+      const c = ui.modal.custom;
+      const name = c.name.trim();
+      if(!name) break;
+      const tag = state.split.tage.find(t => t.id === ui.modal.tagId);
+      if(tag){
+        const maxR = tag.uebungen.length ? Math.max(...tag.uebungen.map(u=>u.reihenfolge)) : -1;
+        const wMin = parseInt(c.wMin,10) || 1;
+        const neu = {
+          id: uid(), name, saetze: parseInt(c.saetze,10) || 3,
+          gewicht: parseDe(String(c.gewicht)) || 0,
+          wiederholungsMin: wMin,
+          wiederholungsMax: Math.max(wMin, parseInt(c.wMax,10) || wMin),
+          zielWiederholungen: wMin,
+          gewichtsSteigerung: parseDe(String(c.step)) || 0,
+          reihenfolge: maxR+1,
+          einheit: c.einheit,
+        };
+        tag.uebungen.push(neu);
+        ui.eingaben[neu.id] = leereEingabe(neu);
+        saveState(); saveEingaben();
+      }
+      ui.modal = null; render(); break;
+    }
   }
 }
 function onStatUebungChange(name){ ui.statistik.uebung = name; render(); }
@@ -1111,12 +1278,19 @@ function onRootInput(e){
   const el = e.target.closest('[data-act]');
   if(!el) return;
   const act = el.dataset.act;
-  if(act==='input-gewicht'){ ui.eingaben[el.dataset.uebung].saetze[el.dataset.idx].gewicht = el.value; }
-  else if(act==='input-wdh'){ ui.eingaben[el.dataset.uebung].saetze[el.dataset.idx].wiederholungen = el.value; }
-  else if(act==='input-notiz'){ ui.eingaben[el.dataset.uebung].notiz = el.value; }
+  if(act==='input-gewicht'){ ui.eingaben[el.dataset.uebung].saetze[el.dataset.idx].gewicht = el.value; saveEingaben(); }
+  else if(act==='input-wdh'){ ui.eingaben[el.dataset.uebung].saetze[el.dataset.idx].wiederholungen = el.value; saveEingaben(); }
+  else if(act==='input-notiz'){ ui.eingaben[el.dataset.uebung].notiz = el.value; saveEingaben(); }
   else if(act==='edit-gewicht'){ bearbeitungWerte.gewicht[el.dataset.satz] = el.value; }
   else if(act==='edit-wdh'){ bearbeitungWerte.wdh[el.dataset.satz] = el.value; }
   else if(act==='edit-notiz'){ bearbeitungWerte.notiz[el.dataset.name] = el.value; }
+  else if(act==='uebungFilter'){
+    ui.modal.filter = el.value;
+    const c = document.getElementById('uebungFilterResults');
+    if(c) c.innerHTML = renderBibliothekListe(ui.modal.filter);
+  }
+  else if(act==='customName'){ ui.modal.custom.name = el.value; }
+  else if(act==='customField'){ ui.modal.custom[el.dataset.field] = el.value; }
 }
 
 /* ---- Training abschließen ---- */
@@ -1124,30 +1298,32 @@ function bereiteAbschlussVor(){
   const tag = gewaehlterTag();
   if(!tag) return;
   const zeilen = tag.uebungen.slice().sort((a,b)=>a.reihenfolge-b.reihenfolge).map(uebung => {
+    const einheit = uebung.einheit || 'wiederholungen';
     const eingabe = ui.eingaben[uebung.id] || leereEingabe(uebung);
     const ausgefuellte = eingabe.saetze
       .filter(s => s.gewicht.trim()!=='' && s.wiederholungen.trim()!=='')
       .map(s => ({ gewicht: parseDe(s.gewicht) || uebung.gewicht, wiederholungen: parseInt(s.wiederholungen,10) || 0 }));
     const notizText = eingabe.notiz.trim();
-    const ergebnis = berechneProgression(uebung.gewicht, uebung.saetze, uebung.gewichtsSteigerung, uebung.wiederholungsMin, uebung.wiederholungsMax, uebung.zielWiederholungen, ausgefuellte, state.split.trainingsziel);
-    return { uebungId: uebung.id, uebungName: uebung.name, ausgefuellteSaetze: ausgefuellte, notizText, ergebnis };
+    const ergebnis = berechneProgression(uebung.gewicht, uebung.saetze, uebung.gewichtsSteigerung, uebung.wiederholungsMin, uebung.wiederholungsMax, uebung.zielWiederholungen, ausgefuellte, state.split.trainingsziel, einheit);
+    return { uebungId: uebung.id, uebungName: uebung.name, einheit, ausgefuellteSaetze: ausgefuellte, notizText, ergebnis };
   });
   ui.modal = { type:'abschluss', vorschau: { tagId: tag.id, tagName: tag.name, zeilen } };
   render();
 }
 function bestaetigeAbschluss(){
   const vorschau = ui.modal.vorschau;
-  const eintrag = { id: uid(), datum: new Date().toISOString(), tagName: vorschau.tagName, saetze: [], notizen: [] };
+  const eintrag = { id: uid(), datum: new Date().toISOString(), tagName: vorschau.tagName, saetze: [], notizen: [], fortschritt: [] };
   const zeilenErgebnis = [];
   vorschau.zeilen.forEach(z => {
-    z.ausgefuellteSaetze.forEach(sd => eintrag.saetze.push({ id: uid(), gewicht: sd.gewicht, wiederholungen: sd.wiederholungen, uebungsName: z.uebungName }));
+    z.ausgefuellteSaetze.forEach(sd => eintrag.saetze.push({ id: uid(), gewicht: sd.gewicht, wiederholungen: sd.wiederholungen, uebungsName: z.uebungName, einheit: z.einheit }));
     if(z.notizText) eintrag.notizen.push({ uebungsName: z.uebungName, text: z.notizText });
+    eintrag.fortschritt.push({ uebungsName: z.uebungName, status: z.ergebnis.status });
     const uebung = state.split.tage.flatMap(t=>t.uebungen).find(u=>u.id===z.uebungId);
     if(uebung){ uebung.gewicht = z.ergebnis.neuesGewicht; uebung.zielWiederholungen = z.ergebnis.neueZielWiederholungen; delete ui.eingaben[uebung.id]; }
-    zeilenErgebnis.push({ uebungName: z.uebungName, ergebnis: z.ergebnis, geleisteteSaetze: z.ausgefuellteSaetze });
+    zeilenErgebnis.push({ uebungName: z.uebungName, einheit: z.einheit, ergebnis: z.ergebnis, geleisteteSaetze: z.ausgefuellteSaetze });
   });
   state.eintraege.push(eintrag);
-  saveState();
+  saveState(); saveEingaben();
   ui.modal = { type:'zusammenfassung', zeilen: zeilenErgebnis };
   render();
 }
@@ -1184,10 +1360,24 @@ function tauscheUebung(uebungId, name){
   uebung.wiederholungsMax = k.wMax;
   uebung.zielWiederholungen = k.wMin;
   uebung.gewichtsSteigerung = vorlage.step * k.faktor;
+  uebung.einheit = 'wiederholungen';
   saveState();
   const gewichtStr = vorlage.kg>0 ? fmt(vorlage.kg) : '';
   ui.eingaben[uebungId] = { saetze: Array.from({length:k.saetze}, () => ({gewicht:gewichtStr, wiederholungen:String(k.wMin)})), notiz:'' };
+  saveEingaben();
   ui.modal = null;
+  render();
+}
+
+/// Entfernt eine Uebung aus ihrem Trainingstag. Die bisherige Historie (SatzEintrag-Snapshots
+/// mit uebungsName) bleibt unangetastet, da sie unabhaengig vom aktuellen Plan gespeichert ist.
+function entferneUebung(uebungId, name){
+  if(!confirm(`„${name}" aus diesem Trainingstag entfernen? Die bisherige Historie dieser Übung bleibt erhalten.`)) return;
+  const tag = state.split.tage.find(t => t.uebungen.some(u => u.id === uebungId));
+  if(!tag) return;
+  tag.uebungen = tag.uebungen.filter(u => u.id !== uebungId);
+  delete ui.eingaben[uebungId];
+  saveState(); saveEingaben();
   render();
 }
 
