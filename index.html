@@ -34,6 +34,7 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     min-height:100vh;
     min-height:100dvh;
+    padding-top: env(safe-area-inset-top);
     -webkit-user-select:none;
     user-select:none;
   }
@@ -53,13 +54,18 @@
     background:var(--iron-grad); color:#fff; font-size:16px; font-weight:700; cursor:pointer;
   }
   .btn-primary:disabled{ background:var(--iron-card); color:var(--iron-muted); }
+  .btn-primary svg, .btn-ghost svg{ width:18px; height:18px; flex-shrink:0; }
+  .btn-compact{ padding:13px; font-size:15px; }
   .btn-ghost{
     display:flex; align-items:center; justify-content:center; gap:6px;
     width:100%; padding:14px; border:none; border-radius:14px;
     background:rgba(30,144,255,0.12); color:var(--iron-accent); font-size:14px; font-weight:600; cursor:pointer;
   }
   .capsule{ padding:9px 16px; border-radius:999px; font-size:14px; font-weight:600; border:none; cursor:pointer; white-space:nowrap; }
-  .icon-circle{ width:32px; height:32px; border-radius:999px; display:flex; align-items:center; justify-content:center; border:none; cursor:pointer; background:rgba(30,144,255,0.15); color:var(--iron-accent); }
+  .icon-circle{ width:32px; height:32px; border-radius:999px; display:flex; align-items:center; justify-content:center; border:none; cursor:pointer; background:rgba(30,144,255,0.15); color:var(--iron-accent); flex-shrink:0; }
+  .icon-circle svg{ width:15px; height:15px; }
+  .chev svg{ width:16px; height:16px; }
+  .alt-item svg{ width:16px; height:16px; }
   input[type=text], input[type=number], textarea{
     background:var(--iron-input); border:1px solid transparent; color:#fff; border-radius:8px; padding:7px 8px; font-size:15px;
   }
@@ -71,6 +77,7 @@
   .logo-header .grad-text{ background:var(--iron-grad); -webkit-background-clip:text; background-clip:text; color:transparent; }
   .logo-header .app-icon{ width:34px; height:34px; border-radius:9px; display:block; }
   .top-bar{ position:sticky; top:0; z-index:5; background:var(--iron-bg); }
+  .sheet-backdrop{ padding-bottom: env(safe-area-inset-bottom); }
 
   /* ---- bottom tab bar ---- */
   .tabbar{
@@ -89,8 +96,10 @@
   .streak-card{ display:flex; align-items:center; gap:12px; background:rgba(28,28,34,0.6); border-radius:14px; padding:16px; }
   .kachel{ display:flex; align-items:center; gap:16px; background:var(--iron-card); border-radius:18px; padding:20px; cursor:pointer; border:none; width:100%; text-align:left; color:#fff; }
   .kachel.main{ border:1.5px solid rgba(30,144,255,0.3); }
-  .kachel-icon{ width:64px; height:64px; border-radius:999px; background:rgba(30,144,255,0.18); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .kachel-icon{ width:64px; height:64px; border-radius:999px; background:rgba(30,144,255,0.18); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--iron-accent); }
+  .kachel-icon svg{ width:28px; height:28px; }
   .kachel.small .kachel-icon{ width:50px; height:50px; }
+  .kachel.small .kachel-icon svg{ width:23px; height:23px; }
   .kachel-title{ font-size:17px; font-weight:700; }
   .kachel-sub{ font-size:13px; color:var(--iron-muted); margin-top:2px; }
   .chev{ margin-left:auto; color:var(--iron-muted); }
@@ -152,12 +161,12 @@
 
   /* ---- modal / sheet ---- */
   .sheet-backdrop{ position:fixed; inset:0; z-index:50; background:var(--iron-bg); display:flex; flex-direction:column; }
-  .sheet-header{ display:flex; align-items:center; justify-content:space-between; padding:14px 16px; background:var(--iron-card); border-bottom:1px solid var(--iron-sep); }
+  .sheet-header{ display:flex; align-items:center; justify-content:space-between; padding:14px 16px; padding-top:calc(14px + env(safe-area-inset-top)); background:var(--iron-card); border-bottom:1px solid var(--iron-sep); }
   .sheet-header .title{ font-size:16px; font-weight:700; flex:1; text-align:center; }
   .sheet-header button{ background:none; border:none; color:var(--iron-accent); font-size:15px; font-weight:600; cursor:pointer; min-width:60px; }
   .sheet-header button.right{ text-align:right; }
   .sheet-body{ flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:16px; }
-  .sheet-footer{ padding:16px; background:var(--iron-bg); border-top:1px solid var(--iron-sep); }
+  .sheet-footer{ padding:16px; padding-bottom:calc(16px + env(safe-area-inset-bottom)); background:var(--iron-bg); border-top:1px solid var(--iron-sep); }
 
   .ziel-card, .typ-card{ display:flex; align-items:center; gap:14px; background:var(--iron-card); border-radius:14px; padding:16px; margin-bottom:10px; border:2px solid transparent; cursor:pointer; width:100%; text-align:left; color:#fff; }
   .ziel-card.sel, .typ-card.sel{ border-color:var(--iron-accent); }
@@ -636,6 +645,7 @@ const ICONS = {
   chevron: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg>',
   swap: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 2l4 4-4 4M3 6h18M7 22l-4-4 4-4M21 18H3"/></svg>',
   check: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>',
+  chart: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 20h2v-7H4zM10 20h2V4h-2zM16 20h2v-11h-2z"/></svg>',
 };
 
 /* =========================================================================
@@ -737,17 +747,17 @@ function renderStart(){
         </div>
       </div>
       <button class="kachel main" data-act="tab" data-arg="training">
-        <div class="kachel-icon">${ICONS.dumbbell.replace('currentColor','var(--iron-accent)')}</div>
+        <div class="kachel-icon">${ICONS.dumbbell}</div>
         <div><div class="kachel-title">Mein Training</div><div class="kachel-sub">Gewicht &amp; Wiederholungen eintragen</div></div>
         <div class="chev">${ICONS.chevron}</div>
       </button>
       <button class="kachel small" data-act="tab" data-arg="historie">
-        <div class="kachel-icon" style="background:rgba(30,144,255,0.15);">${ICONS.clock.replace('currentColor','var(--iron-accent)')}</div>
+        <div class="kachel-icon" style="background:rgba(30,144,255,0.15);">${ICONS.clock}</div>
         <div><div class="kachel-title">Historie</div><div class="kachel-sub">Alle abgeschlossenen Trainings</div></div>
         <div class="chev">${ICONS.chevron}</div>
       </button>
       <button class="kachel small" data-act="openModal" data-arg="statistik">
-        <div class="kachel-icon" style="background:rgba(30,144,255,0.15); font-size:20px;">📊</div>
+        <div class="kachel-icon" style="background:rgba(30,144,255,0.15);">${ICONS.chart}</div>
         <div><div class="kachel-title">Diagramme &amp; Statistiken</div><div class="kachel-sub">${esc(statText)}</div></div>
         <div class="chev">${ICONS.chevron}</div>
       </button>
@@ -785,11 +795,11 @@ function renderTraining(){
     const uebungen = tag.uebungen.slice().sort((a,b)=>a.reihenfolge-b.reihenfolge);
     html += `<div style="padding-top:14px;">`;
     uebungen.forEach(uebung => { html += renderUebungCard(uebung); });
-    html += `<div style="padding:0 16px 16px;"><button class="btn-ghost" data-act="openModal" data-arg="uebungHinzufuegen">+ Übung hinzufügen</button></div>`;
+    html += `<div style="padding:0 16px 12px;"><button class="btn-ghost" data-act="openModal" data-arg="uebungHinzufuegen">+ Übung hinzufügen</button></div>`;
+    html += `<div style="padding:0 16px 24px;"><button class="btn-primary btn-compact" data-act="abschliessen">${ICONS.check} Training abschließen</button></div>`;
     html += `</div>`;
-    html += `<div class="sticky-bottom"><button class="btn-primary" data-act="abschliessen">${ICONS.check} Training abschließen</button></div>`;
   } else {
-    html += `<div class="empty-state">${ICONS.dumbbell}<div style="font-weight:700; color:#fff;">Kein Trainingsplan</div><div>Leg einen neuen Plan über „Plan ändern" an.</div></div>`;
+    html += `<div class="empty-state"><div style="width:44px; height:44px;">${ICONS.dumbbell}</div><div style="font-weight:700; color:#fff;">Kein Trainingsplan</div><div>Leg einen neuen Plan über „Plan ändern" an.</div></div>`;
   }
   html += `</div>`;
   return html;
@@ -833,7 +843,7 @@ function renderHistorie(){
     <div class="top-bar"><div class="logo-header">${logoMark()}</div><hr class="sep"></div>
     <div style="padding-top:6px;">`;
   if(!eintraege.length){
-    html += `<div class="empty-state">${ICONS.clock}<div style="font-weight:700; color:#fff;">Noch keine Trainings</div><div>Schließ dein erstes Training ab, dann erscheint es hier.</div></div>`;
+    html += `<div class="empty-state"><div style="width:44px; height:44px;">${ICONS.clock}</div><div style="font-weight:700; color:#fff;">Noch keine Trainings</div><div>Schließ dein erstes Training ab, dann erscheint es hier.</div></div>`;
   } else {
     eintraege.forEach(e => { html += renderHistCard(e); });
   }
