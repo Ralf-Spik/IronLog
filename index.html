@@ -1293,8 +1293,10 @@ const timer = {
 };
 const TIMER_GRENZEN = { vorbereitung:[0,300], belastung:[5,3600], pause:[0,900], runden:[1,99] };
 
-/// Kurzer Signalton ueber die WebAudio-API - braucht keine externe Tondatei.
-function timerPieps(hz, dauerSek, lautstaerke){
+/// Kurzer, weicher Signalton ueber die WebAudio-API - braucht keine Tondatei.
+/// `versatzSek` plant den Ton auf der Audio-Zeitachse nach vorn, damit mehrere
+/// Toene als saubere Tonfolge klingen (praeziser als setTimeout).
+function timerPieps(hz, dauerSek, lautstaerke, versatzSek){
   try{
     const AC = window.AudioContext || window.webkitAudioContext;
     if(!AC) return;
@@ -1304,13 +1306,29 @@ function timerPieps(hz, dauerSek, lautstaerke){
     const osc = ctx.createOscillator(), gain = ctx.createGain();
     osc.type = 'sine';
     osc.frequency.value = hz;
-    const t0 = ctx.currentTime;
+    const t0 = ctx.currentTime + (versatzSek || 0);
+    const laut = lautstaerke || 0.25;
+    // weiches An- und Abschwellen, damit es nicht klickt oder schrill wirkt
     gain.gain.setValueAtTime(0.0001, t0);
-    gain.gain.exponentialRampToValueAtTime(lautstaerke || 0.35, t0 + 0.012);
+    gain.gain.exponentialRampToValueAtTime(laut, t0 + 0.02);
     gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dauerSek);
     osc.connect(gain); gain.connect(ctx.destination);
-    osc.start(t0); osc.stop(t0 + dauerSek + 0.02);
+    osc.start(t0); osc.stop(t0 + dauerSek + 0.03);
   }catch(e){}
+}
+
+/// Tonfolgen je Ereignis - jede Phase klingt anders, damit man ohne Hinsehen
+/// weiss, was als Naechstes dran ist. Eintrag: [Frequenz, Dauer, Lautstaerke, Versatz]
+const TIMER_TOENE = {
+  start:        [[587, 0.10, 0.16, 0.00], [880, 0.18, 0.20, 0.10]],                          // aufsteigend: es geht los
+  vorbereitung: [[523, 0.14, 0.14, 0.00]],                                                   // ruhig: gleich geht es los
+  belastung:    [[660, 0.09, 0.20, 0.00], [990, 0.22, 0.26, 0.09]],                          // hell aufsteigend: jetzt!
+  pause:        [[660, 0.09, 0.14, 0.00], [440, 0.26, 0.16, 0.09]],                          // weich absteigend: durchatmen
+  countdown:    [[784, 0.05, 0.10, 0.00]],                                                   // dezenter Tick
+  fertig:       [[523, 0.12, 0.20, 0.00], [659, 0.12, 0.22, 0.13], [784, 0.36, 0.26, 0.26]], // kleiner Schlussakkord
+};
+function timerTon(name){
+  (TIMER_TOENE[name] || []).forEach(([hz, dauer, laut, versatz]) => timerPieps(hz, dauer, laut, versatz));
 }
 function timerVibriert(muster){ try{ if(navigator.vibrate) navigator.vibrate(muster); }catch(e){} }
 
@@ -1327,7 +1345,7 @@ function timerStart(){
     else timerSetzePhase('belastung', timer.belastung);
   }
   timer.laeuft = true;
-  timerPieps(660, 0.12);
+  timerTon('start');
   timer.intervalId = setInterval(timerTick, 1000);
   timerAnzeige();
 }
@@ -1344,14 +1362,14 @@ function timerReset(){
 function timerFertig(){
   timerPausiere();
   timer.phase = 'fertig'; timer.rest = 0; timer.gesamt = 0;
-  timerPieps(1046, 0.5, 0.4);
+  timerTon('fertig');
   timerVibriert([140, 90, 140, 90, 220]);
   timerAnzeige();
 }
 function timerTick(){
   timer.rest--;
   if(timer.rest > 0){
-    if(timer.rest <= 3) timerPieps(660, 0.07, 0.22);   // Countdown der letzten Sekunden
+    if(timer.rest <= 3) timerTon('countdown');   // dezenter Tick in den letzten Sekunden
     timerAnzeige();
     return;
   }
@@ -1373,8 +1391,8 @@ function timerTick(){
   } else {
     timerFertig(); return;
   }
-  timerPieps(880, 0.22, 0.4);
-  timerVibriert(220);
+  timerTon(timer.phase);   // 'belastung' klingt anders als 'pause'
+  timerVibriert(timer.phase === 'belastung' ? 220 : 110);
   timerAnzeige();
 }
 /// Aktualisiert nur die betroffenen Elemente statt die ganze Seite neu zu bauen -
