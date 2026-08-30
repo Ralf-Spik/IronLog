@@ -122,6 +122,11 @@
   .mini-btn.danger{ background:rgba(255,69,58,0.15); color:var(--iron-danger); }
   .mini-btn svg{ width:14px; height:14px; }
   .plan-row{ display:flex; align-items:center; gap:8px; background:var(--iron-card); border-radius:14px; padding:14px; margin-bottom:10px; }
+  .tag-waehlen{ display:flex; align-items:center; gap:10px; width:100%; background:var(--iron-input); border:none; border-radius:12px; padding:12px 14px; color:#fff; cursor:pointer; text-align:left; }
+  .tag-waehlen:active{ background:rgba(30,144,255,0.18); }
+  .plan-karte{ background:var(--iron-card); border-radius:16px; padding:16px; margin-bottom:12px; border:1.5px solid transparent; }
+  .plan-karte.aktiv{ border-color:rgba(30,144,255,0.45); }
+  .aktiv-badge{ font-size:10px; font-weight:700; background:rgba(30,144,255,0.18); color:var(--iron-accent); padding:3px 8px; border-radius:999px; margin-left:6px; vertical-align:middle; }
   .timer-display{ text-align:center; padding:14px 0 4px; }
   .timer-phase{ font-size:14px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; }
   .timer-time{ font-size:70px; font-weight:800; line-height:1; font-variant-numeric:tabular-nums; margin:10px 0 6px; }
@@ -374,6 +379,7 @@ function alternativenFuer(name){
    Trainingsziel-Rechner
    ========================================================================= */
 const ZIEL_LABEL = { hypertrophie:"Hypertrophie", maximalkraft:"Maximalkraft", kraftausdauer:"Kraftausdauer" };
+const ZIEL_ICON  = { hypertrophie:'💪', maximalkraft:'⚡', kraftausdauer:'🏃' };
 const ZIEL_BESCHREIBUNG = {
   hypertrophie: "Muskelaufbau · 6–15 Wdh. · 3–4 Sätze",
   maximalkraft: "Kraftaufbau · 3–6 Wdh. · 4–5 Sätze",
@@ -665,22 +671,60 @@ const ICONS = {
    Zustand
    ========================================================================= */
 let state = loadState();
+
+/// Bringt gespeicherte Daten auf das aktuelle Modell:
+///   state.standard = das mitgelieferte IronLog-Training
+///   state.plaene   = eigene Trainings (flach, mit id/name)
+///   state.aktivId  = welches Training gerade bespielt wird
+/// Frueher gab es nur `state.split` (ein einziger Plan) und Plaene in der Form
+/// {id,name,split}. Beides wird hier verlustfrei uebernommen.
+function migriereState(s){
+  if(!s.standard){
+    s.standard = s.split
+      ? Object.assign({}, s.split, { id:'standard', name:'IronLog-Training' })
+      : Object.assign(seedSplit(), { id:'standard', name:'IronLog-Training' });
+  }
+  s.standard.id = 'standard';
+  if(!s.standard.name) s.standard.name = 'IronLog-Training';
+  if(!Array.isArray(s.plaene)) s.plaene = [];
+  s.plaene = s.plaene.map(p => p && p.split
+    ? Object.assign({}, p.split, { id: p.id, name: p.name, gespeichertAm: p.gespeichertAm })
+    : p).filter(Boolean);
+  if(!s.aktivId) s.aktivId = 'standard';
+  if(s.aktivId !== 'standard' && !s.plaene.some(p => p.id === s.aktivId)) s.aktivId = 'standard';
+  if(!Array.isArray(s.eintraege)) s.eintraege = [];
+  delete s.split;
+  return s;
+}
+
+/// Das Training, das gerade bespielt und fortgeschrieben wird.
+function aktiverPlan(){
+  if(state.aktivId && state.aktivId !== 'standard'){
+    const p = (state.plaene || []).find(x => x.id === state.aktivId);
+    if(p) return p;
+  }
+  return state.standard;
+}
+function aktivierePlan(id){
+  state.aktivId = id;
+  ui.eingaben = {};
+  ui.trainingTagIndex = 0;
+  saveState(); saveEingaben();
+}
+
 function loadState(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
     if(raw){
       const parsed = JSON.parse(raw);
-      if(parsed && parsed.split){
-        if(!Array.isArray(parsed.plaene)) parsed.plaene = [];  // Bestandsdaten nachruesten
-        return parsed;
-      }
+      if(parsed && (parsed.split || parsed.standard)) return migriereState(parsed);
     }
   }catch(e){}
   // Sofort speichern statt erst bei der naechsten Aktion: sonst wuerde ein Reload
   // (z.B. iOS wirft die Safari-Seite im Hintergrund aus dem Speicher) vor dem ersten
   // saveState() einen komplett NEUEN Plan mit neuen IDs erzeugen und alle bereits
   // getippten (aber noch nicht abgeschlossenen) Satz-Eingaben verwaisen lassen.
-  const fresh = { split: seedSplit(), eintraege: [], plaene: [] };
+  const fresh = migriereState({ split: seedSplit(), eintraege: [], plaene: [] });
   try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh)); }catch(e){}
   return fresh;
 }
@@ -699,6 +743,8 @@ function saveEingaben(){ try{ localStorage.setItem(EINGABEN_KEY, JSON.stringify(
 // UI-Zustand (nicht persistiert)
 const ui = {
   tab: 'start',
+  trainingAnsicht: 'auswahl',   // 'auswahl' = Trainingswahl, 'log' = Eintragen
+  trainingArt: 'standard',      // 'standard' = IronLog-Training, 'eigene' = eigene Trainings
   trainingTagIndex: 0,
   eingaben: loadEingaben(), // uebungId -> {saetze:[{gewicht,wiederholungen}], notiz} - persistiert
   trainingMenuOpen: false,
@@ -712,7 +758,7 @@ function leereEingabe(uebung){
   const wdhStr = String(uebung.zielWiederholungen);
   return { saetze: Array.from({length: uebung.saetze}, () => ({ gewicht: gewichtStr, wiederholungen: wdhStr })), notiz: '' };
 }
-function sortierteTage(){ return state.split.tage.slice().sort((a,b) => a.reihenfolge - b.reihenfolge); }
+function sortierteTage(){ return aktiverPlan().tage.slice().sort((a,b) => a.reihenfolge - b.reihenfolge); }
 function gewaehlterTag(){ const t = sortierteTage(); return t[ui.trainingTagIndex] || null; }
 function initialisiereEingaben(){
   const tag = gewaehlterTag();
@@ -720,10 +766,10 @@ function initialisiereEingaben(){
   tag.uebungen.forEach(uebung => { if(!ui.eingaben[uebung.id]) ui.eingaben[uebung.id] = leereEingabe(uebung); });
 }
 function wochenVergangen(){
-  const diffMs = new Date() - new Date(state.split.zyklusStart);
+  const diffMs = new Date() - new Date(aktiverPlan().zyklusStart);
   return Math.max(0, Math.floor(diffMs / (7*24*3600*1000)));
 }
-function zyklusAbgelaufen(){ return wochenVergangen() >= state.split.zyklusWochen; }
+function zyklusAbgelaufen(){ return wochenVergangen() >= aktiverPlan().zyklusWochen; }
 
 /* =========================================================================
    Render
@@ -790,27 +836,91 @@ function renderStart(){
 }
 
 /* ---------------- Training ---------------- */
+/// Kopfzeile mit Logo und Menue - von Auswahl und Log gemeinsam genutzt.
+function trainingKopf(){
+  const eintrag = (act, arg, text) =>
+    `<button data-act="${act}" data-arg="${arg}" style="display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:12px 14px; background:none; border:none; color:#fff; font-size:14px; cursor:pointer;">${text}</button>`;
+  return `<div class="logo-header" style="position:relative;">
+        ${logoMark()}
+        <button data-act="toggleMenu" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--iron-muted); font-size:20px; cursor:pointer; padding:8px;">☰</button>
+        ${ui.trainingMenuOpen ? `
+        <div style="position:absolute; right:8px; top:44px; background:var(--iron-card); border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,0.4); overflow:hidden; z-index:10; min-width:190px;">
+          ${eintrag('openModal','einstellungen','🎯 Trainingsziel')}
+          <div class="sep"></div>
+          ${eintrag('openModal','timer','⏱ Intervall-Timer')}
+          <div class="sep"></div>
+          ${eintrag('openModal','plangenerator','🔁 Übungen neu würfeln')}
+        </div>` : ''}
+      </div>`;
+}
+
+/// Eine Trainings-Kachel in der Auswahl: Kopfzeile plus die einzelnen Tage.
+function planAuswahlKarte(plan, istStandard){
+  const tage = plan.tage.slice().sort((a,b) => a.reihenfolge - b.reihenfolge);
+  const istAktiv = plan.id === (state.aktivId || 'standard');
+  const uebungen = tage.reduce((s,t) => s + t.uebungen.length, 0);
+  return `<div class="plan-karte ${istAktiv ? 'aktiv' : ''}">
+    <div style="display:flex; align-items:flex-start; gap:8px;">
+      <div style="flex:1; min-width:0;">
+        <div style="font-weight:700;">${esc(plan.name || 'Training')}${istAktiv ? '<span class="aktiv-badge">AKTIV</span>' : ''}</div>
+        <div class="muted" style="font-size:12px; margin-top:2px;">${SPLIT_LABEL[plan.typ] || 'Plan'} · ${ZIEL_ICON[plan.trainingsziel] || ''} ${ZIEL_LABEL[plan.trainingsziel] || ''} · ${uebungen} Übungen</div>
+      </div>
+      ${istStandard ? '' : `<button class="mini-btn" data-act="planUmbenennen" data-plan="${plan.id}" aria-label="Umbenennen">✏️</button>
+      <button class="mini-btn danger" data-act="planLoeschen" data-plan="${plan.id}" aria-label="Löschen">🗑</button>`}
+    </div>
+    <hr class="sep" style="margin:12px 0 10px;">
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      ${tage.map((t,i) => `<button class="tag-waehlen" data-act="starteTraining" data-plan="${plan.id}" data-tag="${i}">
+        <div style="flex:1; min-width:0;">
+          <div style="font-weight:600;">${esc(t.name)}</div>
+          <div class="muted" style="font-size:12px;">${t.uebungen.length} Übungen</div>
+        </div>
+        <div class="chev">${ICONS.chevron}</div>
+      </button>`).join('')}
+      ${!tage.length ? `<div class="empty-hint">Dieses Training hat noch keine Tage.</div>` : ''}
+    </div>
+  </div>`;
+}
+
+/// Untermenü beim Tippen auf „Training": IronLog-Training oder eigene Trainings.
+function renderTrainingAuswahl(){
+  const eigene = state.plaene || [];
+  let inhalt;
+  if(ui.trainingArt === 'standard'){
+    inhalt = `<div class="muted" style="font-size:13px; margin-bottom:12px;">Der mitgelieferte Plan mit sinnvoll aufgebauten Trainingstagen. Wähl einen Tag, um loszulegen.</div>`
+           + planAuswahlKarte(state.standard, true);
+  } else {
+    inhalt = `<div class="muted" style="font-size:13px; margin-bottom:12px;">Eigene Trainings starten als fertige Vorlage, die du frei anpassen kannst – Übungen, Reihenfolge, Ziel. Progression und Statistik laufen ganz normal weiter.</div>`
+           + (eigene.length ? eigene.map(p => planAuswahlKarte(p, false)).join('')
+                            : `<div class="empty-hint">Noch keine eigenen Trainings.</div>`)
+           + `<button class="btn-ghost" style="margin-top:4px;" data-act="openModal" data-arg="neuesTraining">+ Neues eigenes Training</button>`
+           + `<button class="btn-ghost" style="margin-top:10px;" data-act="planSpeichern">📋 Aktuelles Training als eigenes speichern</button>`;
+  }
+  return `<div class="wrap">
+    <div class="top-bar">${trainingKopf()}<hr class="sep"></div>
+    <div style="padding:14px 16px 0;">
+      <div class="segmented">
+        <button class="${ui.trainingArt==='standard'?'active':''}" data-act="trainingArt" data-arg="standard">IronLog-Training</button>
+        <button class="${ui.trainingArt==='eigene'?'active':''}" data-act="trainingArt" data-arg="eigene">Eigene Trainings</button>
+      </div>
+    </div>
+    <div style="padding:16px 16px 24px;">${inhalt}</div>
+  </div>`;
+}
+
 function renderTraining(){
+  if(ui.trainingAnsicht !== 'log') return renderTrainingAuswahl();
   initialisiereEingaben();
   const tage = sortierteTage();
   const tag = gewaehlterTag();
   let html = `<div class="wrap">
     <div class="top-bar">
-      <div class="logo-header" style="position:relative;">
-        ${logoMark()}
-        <button data-act="toggleMenu" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--iron-muted); font-size:20px; cursor:pointer; padding:8px;">☰</button>
-        ${ui.trainingMenuOpen ? `
-        <div style="position:absolute; right:8px; top:44px; background:var(--iron-card); border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,0.4); overflow:hidden; z-index:10; min-width:180px;">
-          <button data-act="openModal" data-arg="einstellungen" style="display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:12px 14px; background:none; border:none; color:#fff; font-size:14px; cursor:pointer;">🎯 Trainingsziel</button>
-          <div class="sep"></div>
-          <button data-act="openModal" data-arg="plaene" style="display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:12px 14px; background:none; border:none; color:#fff; font-size:14px; cursor:pointer;">📋 Meine Pläne</button>
-          <div class="sep"></div>
-          <button data-act="openModal" data-arg="timer" style="display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:12px 14px; background:none; border:none; color:#fff; font-size:14px; cursor:pointer;">⏱ Intervall-Timer</button>
-          <div class="sep"></div>
-          <button data-act="openModal" data-arg="plangenerator" style="display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:12px 14px; background:none; border:none; color:#fff; font-size:14px; cursor:pointer;">🔁 Plan ändern</button>
-        </div>` : ''}
-      </div>
+      ${trainingKopf()}
       <hr class="sep">
+      <div style="display:flex; align-items:center; gap:10px; padding:10px 16px 2px;">
+        <button class="mini-btn" data-act="zurueckZurAuswahl" aria-label="Zurück zur Auswahl">‹</button>
+        <div class="muted" style="font-size:13px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(aktiverPlan().name || 'Training')}</div>
+      </div>
       ${zyklusAbgelaufen() ? `<div class="cycle-banner">
         <div style="flex:1;"><div style="font-weight:700; font-size:14px;">Zeit für frische Reize!</div><div class="muted" style="font-size:12px;">Dieser Plan läuft seit ${wochenVergangen()} Wochen</div></div>
         <button class="capsule" style="background:var(--iron-grad); color:#fff;" data-act="openModal" data-arg="plangenerator">Neuer Plan</button>
@@ -931,7 +1041,7 @@ function renderModal(){
     case 'bearbeiten': return renderBearbeitenModal();
     case 'alternativen': return renderAlternativenModal();
     case 'uebungHinzufuegen': return renderUebungHinzufuegenModal();
-    case 'plaene': return renderPlaeneModal();
+    case 'neuesTraining': return renderNeuesTrainingModal();
     case 'timer': return renderTimerModal();
   }
   return '';
@@ -1008,8 +1118,8 @@ function renderStatistikModal(){
 
 /* ---- Einstellungen ---- */
 function renderEinstellungenModal(){
-  const aktuell = state.split.trainingsziel;
-  const iconMap = { hypertrophie:'💪', maximalkraft:'⚡', kraftausdauer:'🏃' };
+  const aktuell = aktiverPlan().trainingsziel;
+  const iconMap = ZIEL_ICON;
   const body = `<div class="muted" style="text-align:center; margin-bottom:14px; font-size:14px;">Das Trainingsziel bestimmt Wiederholungsbereich, Satzzahl und Gewichtssteigerung für ALLE Übungen deines Plans.</div>
     ${['hypertrophie','maximalkraft','kraftausdauer'].map(z => `
       <button class="ziel-card ${aktuell===z?'sel':''}" data-act="waehleZiel" data-arg="${z}">
@@ -1125,7 +1235,7 @@ function renderBearbeitenModal(){
 /* ---- Alternativen ---- */
 function renderAlternativenModal(){
   const uebungId = ui.modal.uebungId;
-  const tag = state.split.tage.flatMap(t=>t.uebungen).find(u=>u.id===uebungId);
+  const tag = aktiverPlan().tage.flatMap(t=>t.uebungen).find(u=>u.id===uebungId);
   if(!tag) { closeModal(); return ''; }
   const alt = alternativenFuer(tag.name);
   const beste = alt[0], weitere = alt.slice(1);
@@ -1165,7 +1275,7 @@ function renderBibliothekListe(filterText){
 }
 /// Auswahl, an welcher Stelle des Trainingstags die neue Uebung landen soll.
 function positionsWahl(m){
-  const tag = state.split.tage.find(t => t.id === m.tagId);
+  const tag = aktiverPlan().tage.find(t => t.id === m.tagId);
   if(!tag || !tag.uebungen.length) return '';
   const sortiert = tag.uebungen.slice().sort((a,b)=>a.reihenfolge-b.reihenfolge);
   const opts = [`<option value="0" ${m.position===0?'selected':''}>Ganz an den Anfang</option>`]
@@ -1207,30 +1317,31 @@ function renderUebungHinzufuegenModal(){
   return sheet('Übung hinzufügen', {act:'closeModal', label:'Abbrechen'}, null, body);
 }
 
-/* ---- Meine Plaene ---- */
-function renderPlaeneModal(){
-  const plaene = state.plaene || [];
-  const aktuellUebungen = state.split.tage.reduce((s,t)=>s+t.uebungen.length,0);
+/* ---- Neues eigenes Training ---- */
+function renderNeuesTrainingModal(){
+  const m = ui.modal;
   const body = `
-    <div class="muted" style="text-align:center; margin-bottom:14px; font-size:14px;">Speicher deinen aktuellen Plan, um ihn später wieder zu laden – z.B. einen fürs Studio und einen für zuhause.</div>
-    <div class="card" style="margin-bottom:16px;">
-      <div class="muted" style="font-size:12px;">Aktueller Plan</div>
-      <div style="font-weight:700; margin:2px 0 2px;">${SPLIT_LABEL[state.split.typ] || 'Plan'} · ${ZIEL_LABEL[state.split.trainingsziel] || ''}</div>
-      <div class="muted" style="font-size:12px;">${state.split.tage.length} Tage · ${aktuellUebungen} Übungen</div>
-      <button class="btn-primary btn-compact" style="margin-top:12px;" data-act="planSpeichern">${ICONS.check} Diesen Plan speichern</button>
+    <div class="muted" style="text-align:center; margin-bottom:16px; font-size:14px;">Du bekommst eine fertige Vorlage passend zu deinem Ziel. Danach kannst du sie frei anpassen – Übungen tauschen, ergänzen, Reihenfolge ändern. Die automatische Steigerung läuft ganz normal weiter.</div>
+    <div class="field-row" style="margin-bottom:16px;">
+      <span class="lbl" style="min-width:60px;">Name</span>
+      <input type="text" style="flex:1; min-width:0;" value="${esc(m.name)}" data-act="neuName" placeholder="z.B. Zuhause">
     </div>
-    ${plaene.length ? `<div class="muted" style="font-size:12px; font-weight:600; margin-bottom:8px;">Gespeicherte Pläne</div>` : ''}
-    ${plaene.length ? plaene.map(p => `
-      <div class="plan-row">
-        <div style="flex:1; min-width:0;">
-          <div style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(p.name)}</div>
-          <div class="muted" style="font-size:12px;">${p.split.tage.length} Tage · ${p.split.tage.reduce((s,t)=>s+t.uebungen.length,0)} Übungen · ${germanDate(new Date(p.gespeichertAm))}</div>
-        </div>
-        <button class="mini-btn accent" data-act="planLaden" data-plan="${p.id}" aria-label="Laden">▶</button>
-        <button class="mini-btn" data-act="planUmbenennen" data-plan="${p.id}" aria-label="Umbenennen">✏️</button>
-        <button class="mini-btn danger" data-act="planLoeschen" data-plan="${p.id}" aria-label="Löschen">🗑</button>
-      </div>`).join('') : `<div class="empty-hint">Noch keine Pläne gespeichert.</div>`}`;
-  return sheet('Meine Pläne', {act:'closeModal', label:'Fertig'}, null, body);
+    <div class="muted" style="font-size:12px; font-weight:600; margin-bottom:8px;">Aufteilung</div>
+    ${['zweier','dreier','ganzkoerper'].map(t => `
+      <button class="typ-card ${m.typ===t?'sel':''}" data-act="neuTyp" data-arg="${t}">
+        <div class="ziel-icon ${m.typ===t?'sel':''}">${t==='zweier'?'2️⃣':t==='dreier'?'3️⃣':'🔄'}</div>
+        <div><div style="font-weight:700;">${SPLIT_LABEL[t]}</div><div class="muted" style="font-size:12px;">${SPLIT_BESCHREIBUNG[t]}</div></div>
+        <div class="check ${m.typ===t?'sel':''}">${m.typ===t?'●':'○'}</div>
+      </button>`).join('')}
+    <div class="muted" style="font-size:12px; font-weight:600; margin:16px 0 8px;">Trainingsziel</div>
+    ${['hypertrophie','maximalkraft','kraftausdauer'].map(z => `
+      <button class="ziel-card ${m.ziel===z?'sel':''}" data-act="neuZiel" data-arg="${z}">
+        <div class="ziel-icon ${m.ziel===z?'sel':''}">${ZIEL_ICON[z]}</div>
+        <div><div style="font-weight:700;">${ZIEL_LABEL[z]}</div><div class="muted" style="font-size:12px;">${ZIEL_BESCHREIBUNG[z]}</div></div>
+        <div class="check ${m.ziel===z?'sel':''}">${m.ziel===z?'●':'○'}</div>
+      </button>`).join('')}
+    <button class="btn-primary" style="margin-top:18px;" data-act="neuesTrainingAnlegen">${ICONS.check} Training anlegen</button>`;
+  return sheet('Neues eigenes Training', {act:'closeModal', label:'Abbrechen'}, null, body);
 }
 
 /* ---- Intervall-Timer ---- */
@@ -1420,7 +1531,7 @@ function tiefeKopie(obj){ return JSON.parse(JSON.stringify(obj)); }
 /// Verschiebt eine Uebung innerhalb ihres Trainingstags um eine Position und
 /// nummeriert die Reihenfolge danach sauber neu durch.
 function verschiebeUebung(uebungId, richtung){
-  const tag = state.split.tage.find(t => t.uebungen.some(u => u.id === uebungId));
+  const tag = aktiverPlan().tage.find(t => t.uebungen.some(u => u.id === uebungId));
   if(!tag) return;
   const sortiert = tag.uebungen.slice().sort((a,b) => a.reihenfolge - b.reihenfolge);
   const i = sortiert.findIndex(u => u.id === uebungId);
@@ -1450,6 +1561,7 @@ function openModal(type, ctx){
   ui.trainingMenuOpen = false;
   if(type==='plangenerator') ui.modal = { type, schritt:1, typ:'dreier', vorschauPlan:null };
   else if(type==='alternativen') ui.modal = { type, uebungId: ctx.uebung };
+  else if(type==='neuesTraining') ui.modal = { type, name:'', typ:'dreier', ziel: aktiverPlan().trainingsziel || 'hypertrophie' };
   else if(type==='uebungHinzufuegen'){
     const t = gewaehlterTag();
     ui.modal = { type, tagId: t?.id, position: t ? t.uebungen.length : 0, tab:'bibliothek', filter:'',
@@ -1465,7 +1577,7 @@ function onRootClick(e){
   if(!el) return;
   const act = el.dataset.act, arg = el.dataset.arg;
   switch(act){
-    case 'tab': switchTab(arg); break;
+    case 'tab': { if(arg === 'training') ui.trainingAnsicht = 'auswahl'; switchTab(arg); break; }
     case 'openModal': openModal(arg, el.dataset); break;
     case 'closeModal': closeModal(); break;
     case 'toggleMenu': ui.trainingMenuOpen = !ui.trainingMenuOpen; render(); break;
@@ -1496,9 +1608,9 @@ function onRootClick(e){
     case 'bearbeiten': ui.modal = { type:'bearbeiten', eintragId: arg }; render(); break;
     case 'speichereBearbeitung': speichereBearbeitung(); break;
     case 'waehleZiel': {
-      if(arg !== state.split.trainingsziel){
+      if(arg !== aktiverPlan().trainingsziel){
         if(confirm(`Plan wird auf ${ZIEL_LABEL[arg]} angepasst – fortfahren? Sätze, Wiederholungsbereich und Gewicht werden pro Übung neu berechnet (das Gewicht ist eine geschätzte Näherung, bitte beim ersten Training gegenchecken). Deine Trainings-Historie bleibt dabei vollständig erhalten.`)){
-          wendeTrainingszielAn(arg, state.split);
+          wendeTrainingszielAn(arg, aktiverPlan());
           ui.eingaben = {};
           saveState(); render();
         }
@@ -1507,45 +1619,77 @@ function onRootClick(e){
     }
     case 'planTyp': ui.modal.typ = arg; render(); break;
     case 'planGenerieren': {
-      const namen = new Set(state.split.tage.flatMap(t=>t.uebungen.map(u=>u.name)));
-      ui.modal.vorschauPlan = generiereNeuerPlan(ui.modal.typ, state.split.trainingsziel, namen);
+      const namen = new Set(aktiverPlan().tage.flatMap(t=>t.uebungen.map(u=>u.name)));
+      ui.modal.vorschauPlan = generiereNeuerPlan(ui.modal.typ, aktiverPlan().trainingsziel, namen);
       ui.modal.schritt = 2;
       render(); break;
     }
     case 'planNeuGenerieren': {
-      const namen = new Set(state.split.tage.flatMap(t=>t.uebungen.map(u=>u.name)));
+      const namen = new Set(aktiverPlan().tage.flatMap(t=>t.uebungen.map(u=>u.name)));
       ui.modal.vorschauPlan = generiereNeuerPlan(ui.modal.vorschauPlan.typ, ui.modal.vorschauPlan.ziel, namen);
       render(); break;
     }
     case 'planZurueck': ui.modal.schritt = 1; render(); break;
     case 'planUebernehmen': {
-      state.split = uebernehmeNeuerPlan(ui.modal.vorschauPlan);
+      // Ersetzt den Inhalt des AKTIVEN Trainings, behaelt aber dessen Name/ID.
+      const frisch = uebernehmeNeuerPlan(ui.modal.vorschauPlan);
+      const aktiv = aktiverPlan();
+      aktiv.typ = frisch.typ;
+      aktiv.zyklusStart = frisch.zyklusStart;
+      aktiv.zyklusWochen = frisch.zyklusWochen;
+      aktiv.trainingsziel = frisch.trainingsziel;
+      aktiv.tage = frisch.tage;
       ui.eingaben = {}; ui.trainingTagIndex = 0; ui.modal = null;
-      saveState(); render(); break;
+      saveState(); saveEingaben(); render(); break;
     }
     case 'tauscheUebung': tauscheUebung(el.dataset.uebung, el.dataset.name); break;
     case 'statZeitraum': ui.statistik.zeitraum = arg; render(); break;
     case 'entferneUebung': entferneUebung(el.dataset.uebung, el.dataset.name); break;
     case 'verschiebeUebung': verschiebeUebung(el.dataset.uebung, el.dataset.richtung); break;
 
-    /* ---- Meine Plaene ---- */
-    case 'planSpeichern': {
-      const vorschlag = `${SPLIT_LABEL[state.split.typ] || 'Plan'} ${new Date().toLocaleDateString('de-DE')}`;
-      const name = prompt('Name für diesen Plan:', vorschlag);
-      if(name && name.trim()){
-        state.plaene = state.plaene || [];
-        state.plaene.unshift({ id: uid(), name: name.trim(), gespeichertAm: new Date().toISOString(), split: tiefeKopie(state.split) });
-        saveState(); render();
-      }
+    /* ---- Trainingsauswahl ---- */
+    case 'trainingArt': ui.trainingArt = arg; render(); break;
+    case 'zurueckZurAuswahl': ui.trainingAnsicht = 'auswahl'; render(); break;
+    case 'starteTraining': {
+      const planId = el.dataset.plan;
+      if(planId !== (state.aktivId || 'standard')) aktivierePlan(planId);
+      ui.trainingTagIndex = parseInt(el.dataset.tag, 10) || 0;
+      ui.trainingAnsicht = 'log';
+      saveState(); render();
       break;
     }
-    case 'planLaden': {
-      const p = (state.plaene||[]).find(x => x.id === el.dataset.plan);
-      if(!p) break;
-      if(!confirm(`„${p.name}" laden? Dein aktuell aktiver Plan wird dadurch ersetzt (vorher ggf. speichern). Deine Trainings-Historie bleibt vollständig erhalten.`)) break;
-      state.split = tiefeKopie(p.split);
-      ui.eingaben = {}; ui.trainingTagIndex = 0; ui.modal = null;
-      saveState(); saveEingaben(); render();
+    case 'neuName': break;   // Wert wird in onRootInput uebernommen
+    case 'neuTyp': ui.modal.typ = arg; render(); break;
+    case 'neuZiel': ui.modal.ziel = arg; render(); break;
+    case 'neuesTrainingAnlegen': {
+      const m = ui.modal;
+      const name = (m.name || '').trim() || `${SPLIT_LABEL[m.typ]} (eigenes)`;
+      const plan = uebernehmeNeuerPlan(generiereNeuerPlan(m.typ, m.ziel, new Set()));
+      plan.id = uid();
+      plan.name = name;
+      plan.gespeichertAm = new Date().toISOString();
+      state.plaene = state.plaene || [];
+      state.plaene.unshift(plan);
+      aktivierePlan(plan.id);
+      ui.modal = null; ui.trainingArt = 'eigene'; ui.trainingAnsicht = 'auswahl';
+      saveState(); render();
+      break;
+    }
+
+    /* ---- Meine Plaene ---- */
+    case 'planSpeichern': {
+      const vorschlag = `${aktiverPlan().name || 'Training'} (Kopie)`;
+      const name = prompt('Name für dieses Training:', vorschlag);
+      if(name && name.trim()){
+        const kopie = tiefeKopie(aktiverPlan());
+        kopie.id = uid();
+        kopie.name = name.trim();
+        kopie.gespeichertAm = new Date().toISOString();
+        state.plaene = state.plaene || [];
+        state.plaene.unshift(kopie);
+        ui.trainingArt = 'eigene';
+        saveState(); render();
+      }
       break;
     }
     case 'planUmbenennen': {
@@ -1558,9 +1702,11 @@ function onRootClick(e){
     case 'planLoeschen': {
       const p = (state.plaene||[]).find(x => x.id === el.dataset.plan);
       if(!p) break;
-      if(!confirm(`Gespeicherten Plan „${p.name}" löschen? Das kann nicht rückgängig gemacht werden. Dein aktiver Plan und deine Historie bleiben unberührt.`)) break;
+      if(!confirm(`Eigenes Training „${p.name}" löschen? Das kann nicht rückgängig gemacht werden. Deine Trainings-Historie bleibt vollständig erhalten.`)) break;
       state.plaene = state.plaene.filter(x => x.id !== p.id);
-      saveState(); render();
+      if(state.aktivId === p.id) state.aktivId = 'standard';   // aktives geloescht -> zurueck auf Standard
+      ui.eingaben = {}; ui.trainingTagIndex = 0;
+      saveState(); saveEingaben(); render();
       break;
     }
 
@@ -1587,9 +1733,9 @@ function onRootClick(e){
     case 'uebungTab': ui.modal.tab = arg; render(); break;
     case 'uebungAusBibliothek': {
       const vorlage = findVorlage(el.dataset.name);
-      const tag = state.split.tage.find(t => t.id === ui.modal.tagId);
+      const tag = aktiverPlan().tage.find(t => t.id === ui.modal.tagId);
       if(tag && vorlage){
-        const neu = erzeugeUebung(vorlage, state.split.trainingsziel, 0);
+        const neu = erzeugeUebung(vorlage, aktiverPlan().trainingsziel, 0);
         fuegeUebungEin(tag, neu, ui.modal.position);
         ui.eingaben[neu.id] = leereEingabe(neu);
         saveState(); saveEingaben();
@@ -1606,7 +1752,7 @@ function onRootClick(e){
       const c = ui.modal.custom;
       const name = c.name.trim();
       if(!name) break;
-      const tag = state.split.tage.find(t => t.id === ui.modal.tagId);
+      const tag = aktiverPlan().tage.find(t => t.id === ui.modal.tagId);
       if(tag){
         const wMin = parseInt(c.wMin,10) || 1;
         const neu = {
@@ -1644,6 +1790,7 @@ function onRootInput(e){
     const c = document.getElementById('uebungFilterResults');
     if(c) c.innerHTML = renderBibliothekListe(ui.modal.filter);
   }
+  else if(act==='neuName'){ ui.modal.name = el.value; }
   else if(act==='customName'){ ui.modal.custom.name = el.value; }
   else if(act==='customField'){ ui.modal.custom[el.dataset.field] = el.value; }
 }
@@ -1659,7 +1806,7 @@ function bereiteAbschlussVor(){
       .filter(s => s.gewicht.trim()!=='' && s.wiederholungen.trim()!=='')
       .map(s => ({ gewicht: parseDe(s.gewicht) || uebung.gewicht, wiederholungen: parseInt(s.wiederholungen,10) || 0 }));
     const notizText = eingabe.notiz.trim();
-    const ergebnis = berechneProgression(uebung.gewicht, uebung.saetze, uebung.gewichtsSteigerung, uebung.wiederholungsMin, uebung.wiederholungsMax, uebung.zielWiederholungen, ausgefuellte, state.split.trainingsziel, einheit);
+    const ergebnis = berechneProgression(uebung.gewicht, uebung.saetze, uebung.gewichtsSteigerung, uebung.wiederholungsMin, uebung.wiederholungsMax, uebung.zielWiederholungen, ausgefuellte, aktiverPlan().trainingsziel, einheit);
     return { uebungId: uebung.id, uebungName: uebung.name, einheit, ausgefuellteSaetze: ausgefuellte, notizText, ergebnis };
   });
   ui.modal = { type:'abschluss', vorschau: { tagId: tag.id, tagName: tag.name, zeilen } };
@@ -1673,7 +1820,7 @@ function bestaetigeAbschluss(){
     z.ausgefuellteSaetze.forEach(sd => eintrag.saetze.push({ id: uid(), gewicht: sd.gewicht, wiederholungen: sd.wiederholungen, uebungsName: z.uebungName, einheit: z.einheit }));
     if(z.notizText) eintrag.notizen.push({ uebungsName: z.uebungName, text: z.notizText });
     eintrag.fortschritt.push({ uebungsName: z.uebungName, status: z.ergebnis.status });
-    const uebung = state.split.tage.flatMap(t=>t.uebungen).find(u=>u.id===z.uebungId);
+    const uebung = aktiverPlan().tage.flatMap(t=>t.uebungen).find(u=>u.id===z.uebungId);
     if(uebung){ uebung.gewicht = z.ergebnis.neuesGewicht; uebung.zielWiederholungen = z.ergebnis.neueZielWiederholungen; delete ui.eingaben[uebung.id]; }
     zeilenErgebnis.push({ uebungName: z.uebungName, einheit: z.einheit, ergebnis: z.ergebnis, geleisteteSaetze: z.ausgefuellteSaetze });
   });
@@ -1705,8 +1852,8 @@ function speichereBearbeitung(){
 /* ---- Übung tauschen ---- */
 function tauscheUebung(uebungId, name){
   const vorlage = findVorlage(name);
-  const uebung = state.split.tage.flatMap(t=>t.uebungen).find(u=>u.id===uebungId);
-  const ziel = state.split.trainingsziel;
+  const uebung = aktiverPlan().tage.flatMap(t=>t.uebungen).find(u=>u.id===uebungId);
+  const ziel = aktiverPlan().trainingsziel;
   const k = zielKennzahlen(ziel, vorlage.grund);
   uebung.name = vorlage.name;
   uebung.saetze = k.saetze;
@@ -1728,7 +1875,7 @@ function tauscheUebung(uebungId, name){
 /// mit uebungsName) bleibt unangetastet, da sie unabhaengig vom aktuellen Plan gespeichert ist.
 function entferneUebung(uebungId, name){
   if(!confirm(`„${name}" aus diesem Trainingstag entfernen? Die bisherige Historie dieser Übung bleibt erhalten.`)) return;
-  const tag = state.split.tage.find(t => t.uebungen.some(u => u.id === uebungId));
+  const tag = aktiverPlan().tage.find(t => t.uebungen.some(u => u.id === uebungId));
   if(!tag) return;
   tag.uebungen = tag.uebungen.filter(u => u.id !== uebungId);
   delete ui.eingaben[uebungId];
