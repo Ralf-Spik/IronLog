@@ -115,6 +115,19 @@
   .uebung-card{ margin:0 16px 12px; }
   .uebung-head{ display:flex; align-items:center; gap:8px; }
   .uebung-head .name{ font-size:16px; font-weight:700; flex:1; }
+  .uebung-actions{ display:flex; align-items:center; gap:6px; margin-top:9px; }
+  .mini-btn{ width:30px; height:30px; border-radius:8px; border:none; background:var(--iron-input); color:var(--iron-muted); font-size:13px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; padding:0; }
+  .mini-btn:disabled{ opacity:0.28; }
+  .mini-btn.accent{ background:rgba(30,144,255,0.15); color:var(--iron-accent); }
+  .mini-btn.danger{ background:rgba(255,69,58,0.15); color:var(--iron-danger); }
+  .mini-btn svg{ width:14px; height:14px; }
+  .plan-row{ display:flex; align-items:center; gap:8px; background:var(--iron-card); border-radius:14px; padding:14px; margin-bottom:10px; }
+  .timer-display{ text-align:center; padding:14px 0 4px; }
+  .timer-phase{ font-size:14px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; }
+  .timer-time{ font-size:70px; font-weight:800; line-height:1; font-variant-numeric:tabular-nums; margin:10px 0 6px; }
+  .timer-runde{ font-size:14px; color:var(--iron-muted); min-height:18px; }
+  .timer-ring{ height:6px; background:var(--iron-input); border-radius:999px; overflow:hidden; margin:16px 0 2px; }
+  .timer-ring > div{ height:100%; background:var(--iron-grad); border-radius:999px; transition:width .25s linear; }
   .badge{ font-size:12px; font-weight:600; color:var(--iron-accent); background:rgba(30,144,255,0.15); padding:4px 9px; border-radius:999px; white-space:nowrap; }
   .col-head{ display:flex; font-size:11px; font-weight:600; color:var(--iron-muted); margin:10px 0 4px; }
   .col-head .c-satz{ flex:1; margin-left:36px; }
@@ -645,6 +658,7 @@ const ICONS = {
   swap: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 2l4 4-4 4M3 6h18M7 22l-4-4 4-4M21 18H3"/></svg>',
   check: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>',
   chart: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 20h2v-7H4zM10 20h2V4h-2zM16 20h2v-11h-2z"/></svg>',
+  timer: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>',
 };
 
 /* =========================================================================
@@ -654,13 +668,19 @@ let state = loadState();
 function loadState(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
-    if(raw){ const parsed = JSON.parse(raw); if(parsed && parsed.split) return parsed; }
+    if(raw){
+      const parsed = JSON.parse(raw);
+      if(parsed && parsed.split){
+        if(!Array.isArray(parsed.plaene)) parsed.plaene = [];  // Bestandsdaten nachruesten
+        return parsed;
+      }
+    }
   }catch(e){}
   // Sofort speichern statt erst bei der naechsten Aktion: sonst wuerde ein Reload
   // (z.B. iOS wirft die Safari-Seite im Hintergrund aus dem Speicher) vor dem ersten
   // saveState() einen komplett NEUEN Plan mit neuen IDs erzeugen und alle bereits
   // getippten (aber noch nicht abgeschlossenen) Satz-Eingaben verwaisen lassen.
-  const fresh = { split: seedSplit(), eintraege: [] };
+  const fresh = { split: seedSplit(), eintraege: [], plaene: [] };
   try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh)); }catch(e){}
   return fresh;
 }
@@ -760,6 +780,11 @@ function renderStart(){
         <div><div class="kachel-title">Diagramme &amp; Statistiken</div><div class="kachel-sub">${esc(statText)}</div></div>
         <div class="chev">${ICONS.chevron}</div>
       </button>
+      <button class="kachel small" data-act="openModal" data-arg="timer">
+        <div class="kachel-icon" style="background:rgba(30,144,255,0.15);">${ICONS.timer}</div>
+        <div><div class="kachel-title">Intervall-Timer</div><div class="kachel-sub">Für Planks, Zirkel &amp; Pausen</div></div>
+        <div class="chev">${ICONS.chevron}</div>
+      </button>
     </div>
   </div>`;
 }
@@ -778,6 +803,10 @@ function renderTraining(){
         <div style="position:absolute; right:8px; top:44px; background:var(--iron-card); border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,0.4); overflow:hidden; z-index:10; min-width:180px;">
           <button data-act="openModal" data-arg="einstellungen" style="display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:12px 14px; background:none; border:none; color:#fff; font-size:14px; cursor:pointer;">🎯 Trainingsziel</button>
           <div class="sep"></div>
+          <button data-act="openModal" data-arg="plaene" style="display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:12px 14px; background:none; border:none; color:#fff; font-size:14px; cursor:pointer;">📋 Meine Pläne</button>
+          <div class="sep"></div>
+          <button data-act="openModal" data-arg="timer" style="display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:12px 14px; background:none; border:none; color:#fff; font-size:14px; cursor:pointer;">⏱ Intervall-Timer</button>
+          <div class="sep"></div>
           <button data-act="openModal" data-arg="plangenerator" style="display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:12px 14px; background:none; border:none; color:#fff; font-size:14px; cursor:pointer;">🔁 Plan ändern</button>
         </div>` : ''}
       </div>
@@ -793,7 +822,7 @@ function renderTraining(){
   if(tag){
     const uebungen = tag.uebungen.slice().sort((a,b)=>a.reihenfolge-b.reihenfolge);
     html += `<div style="padding-top:14px;">`;
-    uebungen.forEach(uebung => { html += renderUebungCard(uebung); });
+    uebungen.forEach((uebung, i) => { html += renderUebungCard(uebung, i, uebungen.length); });
     html += `<div style="padding:0 16px 12px;"><button class="btn-ghost" data-act="openModal" data-arg="uebungHinzufuegen">+ Übung hinzufügen</button></div>`;
     html += `<div style="padding:0 16px 24px;"><button class="btn-primary btn-compact" data-act="abschliessen">${ICONS.check} Training abschließen</button></div>`;
     html += `</div>`;
@@ -804,7 +833,7 @@ function renderTraining(){
   return html;
 }
 
-function renderUebungCard(uebung){
+function renderUebungCard(uebung, idx, anzahl){
   const einheit = uebung.einheit || 'wiederholungen';
   const eingabe = ui.eingaben[uebung.id] || leereEingabe(uebung);
   const vorgabe = uebung.gewicht>0 ? `${fmt(uebung.gewicht)} kg × ${uebung.zielWiederholungen} ${unitLabel(einheit)}` : `Ziel: ${uebung.zielWiederholungen} ${unitLabel(einheit)}`;
@@ -822,9 +851,15 @@ function renderUebungCard(uebung){
   return `<div class="card uebung-card">
     <div class="uebung-head">
       <div class="name">${esc(uebung.name)}</div>
-      <button class="icon-circle" data-act="openModal" data-arg="alternativen" data-uebung="${uebung.id}">${ICONS.swap}</button>
-      <button class="icon-circle" style="background:rgba(255,69,58,0.15); color:var(--iron-danger);" data-act="entferneUebung" data-uebung="${uebung.id}" data-name="${esc(uebung.name)}">🗑</button>
       <div class="badge">${esc(vorgabe)}</div>
+    </div>
+    <div class="uebung-actions">
+      <button class="mini-btn" ${idx===0?'disabled':''} data-act="verschiebeUebung" data-uebung="${uebung.id}" data-richtung="hoch" aria-label="Nach oben">▲</button>
+      <button class="mini-btn" ${idx===anzahl-1?'disabled':''} data-act="verschiebeUebung" data-uebung="${uebung.id}" data-richtung="runter" aria-label="Nach unten">▼</button>
+      ${einheit==='sekunden' ? `<button class="mini-btn accent" data-act="timerFuerUebung" data-sek="${uebung.zielWiederholungen}" aria-label="Timer">${ICONS.timer}</button>` : ''}
+      <div style="flex:1;"></div>
+      <button class="mini-btn accent" data-act="openModal" data-arg="alternativen" data-uebung="${uebung.id}" aria-label="Übung tauschen">${ICONS.swap}</button>
+      <button class="mini-btn danger" data-act="entferneUebung" data-uebung="${uebung.id}" data-name="${esc(uebung.name)}" aria-label="Entfernen">🗑</button>
     </div>
     <hr class="sep" style="margin:10px 0;">
     <div class="col-head"><span class="c-satz">Satz</span><span class="c-g">Gewicht</span><span class="c-w">${unitLabel(einheit)}</span></div>
@@ -896,6 +931,8 @@ function renderModal(){
     case 'bearbeiten': return renderBearbeitenModal();
     case 'alternativen': return renderAlternativenModal();
     case 'uebungHinzufuegen': return renderUebungHinzufuegenModal();
+    case 'plaene': return renderPlaeneModal();
+    case 'timer': return renderTimerModal();
   }
   return '';
 }
@@ -1126,9 +1163,23 @@ function renderBibliothekListe(filterText){
     ${!treffer.length ? `<div class="empty-hint">Keine Treffer.</div>` : ''}
   </div>`;
 }
+/// Auswahl, an welcher Stelle des Trainingstags die neue Uebung landen soll.
+function positionsWahl(m){
+  const tag = state.split.tage.find(t => t.id === m.tagId);
+  if(!tag || !tag.uebungen.length) return '';
+  const sortiert = tag.uebungen.slice().sort((a,b)=>a.reihenfolge-b.reihenfolge);
+  const opts = [`<option value="0" ${m.position===0?'selected':''}>Ganz an den Anfang</option>`]
+    .concat(sortiert.map((u,i) => `<option value="${i+1}" ${m.position===i+1?'selected':''}>Nach „${esc(u.name)}"</option>`));
+  return `<div class="field-row" style="margin-bottom:14px;">
+    <span class="lbl" style="min-width:72px;">Einfügen</span>
+    <select onchange="onPositionChange(this.value)" style="flex:1; min-width:0; background:var(--iron-input); color:#fff; border:none; border-radius:8px; padding:9px; font-size:14px;">${opts.join('')}</select>
+  </div>`;
+}
+function onPositionChange(v){ if(ui.modal) ui.modal.position = parseInt(v,10); }
+
 function renderUebungHinzufuegenModal(){
   const m = ui.modal;
-  const tabBar = `<div class="segmented" style="margin-bottom:14px;">
+  const tabBar = `${positionsWahl(m)}<div class="segmented" style="margin-bottom:14px;">
     <button class="${m.tab==='bibliothek'?'active':''}" data-act="uebungTab" data-arg="bibliothek">Aus Bibliothek</button>
     <button class="${m.tab==='eigene'?'active':''}" data-act="uebungTab" data-arg="eigene">Eigene Übung</button>
   </div>`;
@@ -1156,6 +1207,223 @@ function renderUebungHinzufuegenModal(){
   return sheet('Übung hinzufügen', {act:'closeModal', label:'Abbrechen'}, null, body);
 }
 
+/* ---- Meine Plaene ---- */
+function renderPlaeneModal(){
+  const plaene = state.plaene || [];
+  const aktuellUebungen = state.split.tage.reduce((s,t)=>s+t.uebungen.length,0);
+  const body = `
+    <div class="muted" style="text-align:center; margin-bottom:14px; font-size:14px;">Speicher deinen aktuellen Plan, um ihn später wieder zu laden – z.B. einen fürs Studio und einen für zuhause.</div>
+    <div class="card" style="margin-bottom:16px;">
+      <div class="muted" style="font-size:12px;">Aktueller Plan</div>
+      <div style="font-weight:700; margin:2px 0 2px;">${SPLIT_LABEL[state.split.typ] || 'Plan'} · ${ZIEL_LABEL[state.split.trainingsziel] || ''}</div>
+      <div class="muted" style="font-size:12px;">${state.split.tage.length} Tage · ${aktuellUebungen} Übungen</div>
+      <button class="btn-primary btn-compact" style="margin-top:12px;" data-act="planSpeichern">${ICONS.check} Diesen Plan speichern</button>
+    </div>
+    ${plaene.length ? `<div class="muted" style="font-size:12px; font-weight:600; margin-bottom:8px;">Gespeicherte Pläne</div>` : ''}
+    ${plaene.length ? plaene.map(p => `
+      <div class="plan-row">
+        <div style="flex:1; min-width:0;">
+          <div style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(p.name)}</div>
+          <div class="muted" style="font-size:12px;">${p.split.tage.length} Tage · ${p.split.tage.reduce((s,t)=>s+t.uebungen.length,0)} Übungen · ${germanDate(new Date(p.gespeichertAm))}</div>
+        </div>
+        <button class="mini-btn accent" data-act="planLaden" data-plan="${p.id}" aria-label="Laden">▶</button>
+        <button class="mini-btn" data-act="planUmbenennen" data-plan="${p.id}" aria-label="Umbenennen">✏️</button>
+        <button class="mini-btn danger" data-act="planLoeschen" data-plan="${p.id}" aria-label="Löschen">🗑</button>
+      </div>`).join('') : `<div class="empty-hint">Noch keine Pläne gespeichert.</div>`}`;
+  return sheet('Meine Pläne', {act:'closeModal', label:'Fertig'}, null, body);
+}
+
+/* ---- Intervall-Timer ---- */
+function timerPhaseLabel(){
+  switch(timer.phase){
+    case 'vorbereitung': return {t:'Bereitmachen', c:'var(--iron-warn)'};
+    case 'belastung':    return {t:'Belastung',    c:'var(--iron-good)'};
+    case 'pause':        return {t:'Pause',        c:'var(--iron-info)'};
+    case 'fertig':       return {t:'Fertig!',      c:'var(--iron-accent)'};
+    default:             return {t:'Bereit',       c:'var(--iron-muted)'};
+  }
+}
+function mmss(s){
+  s = Math.max(0, s|0);
+  return String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0');
+}
+function timerStartLabel(){
+  if(timer.laeuft) return '⏸ Pause';
+  return (timer.phase && timer.phase !== 'fertig') ? '▶ Weiter' : '▶ Start';
+}
+function timerFortschritt(){
+  return timer.gesamt > 0 ? (100 - (timer.rest/timer.gesamt)*100) : 0;
+}
+function renderTimerModal(){
+  const ph = timerPhaseLabel();
+  const felder = [['vorbereitung','Vorbereitung',5],['belastung','Belastung',5],['pause','Pause',5],['runden','Runden',1]];
+  const body = `
+    <div class="timer-display">
+      <div class="timer-phase" id="timerPhase" style="color:${ph.c};">${ph.t}</div>
+      <div class="timer-time" id="timerZeit">${mmss(timer.rest)}</div>
+      <div class="timer-runde" id="timerRunde">${timer.phase && timer.phase!=='fertig' ? `Runde ${timer.runde} von ${timer.runden}` : ''}</div>
+      <div class="timer-ring"><div id="timerBar" style="width:${timerFortschritt()}%;"></div></div>
+    </div>
+    <div style="display:flex; gap:10px; margin:14px 0 18px;">
+      <button class="btn-primary btn-compact" id="timerStartBtn" data-act="timerStartPause">${timerStartLabel()}</button>
+      <button class="btn-ghost" style="width:auto; padding:13px 20px;" data-act="timerReset" aria-label="Zurücksetzen">↺</button>
+    </div>
+    <div class="card">
+      <div class="section-h">Einstellungen</div>
+      ${felder.map(([k,l,step]) => `
+        <div class="field-row">
+          <span class="lbl" style="min-width:104px;">${l}</span>
+          <button class="mini-btn" data-act="timerFeld" data-feld="${k}" data-delta="${-step}">–</button>
+          <span style="min-width:70px; text-align:center; font-weight:600;">${timer[k]}${k==='runden'?'':' Sek.'}</span>
+          <button class="mini-btn" data-act="timerFeld" data-feld="${k}" data-delta="${step}">+</button>
+        </div>`).join('')}
+    </div>
+    <div class="muted" style="font-size:12px; margin-top:12px; text-align:center;">Der Timer läuft, solange dieses Fenster offen bleibt. Ton und Vibration melden jeden Wechsel.</div>`;
+  return sheet('Intervall-Timer', {act:'timerSchliessen', label:'Fertig'}, null, body);
+}
+
+/* =========================================================================
+   Intervall-Timer (Motor)
+   ========================================================================= */
+const timer = {
+  vorbereitung: 10, belastung: 30, pause: 15, runden: 8,
+  phase: null,   // null | 'vorbereitung' | 'belastung' | 'pause' | 'fertig'
+  rest: 0, gesamt: 0, runde: 0,
+  laeuft: false, intervalId: null, audio: null,
+};
+const TIMER_GRENZEN = { vorbereitung:[0,300], belastung:[5,3600], pause:[0,900], runden:[1,99] };
+
+/// Kurzer Signalton ueber die WebAudio-API - braucht keine externe Tondatei.
+function timerPieps(hz, dauerSek, lautstaerke){
+  try{
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return;
+    if(!timer.audio) timer.audio = new AC();
+    const ctx = timer.audio;
+    if(ctx.state === 'suspended') ctx.resume();
+    const osc = ctx.createOscillator(), gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = hz;
+    const t0 = ctx.currentTime;
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(lautstaerke || 0.35, t0 + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dauerSek);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(t0); osc.stop(t0 + dauerSek + 0.02);
+  }catch(e){}
+}
+function timerVibriert(muster){ try{ if(navigator.vibrate) navigator.vibrate(muster); }catch(e){} }
+
+function timerSetzePhase(phase, sekunden){
+  timer.phase = phase;
+  timer.rest = sekunden;
+  timer.gesamt = sekunden;
+}
+function timerStart(){
+  if(timer.laeuft) return;
+  if(!timer.phase || timer.phase === 'fertig'){
+    timer.runde = 1;
+    if(timer.vorbereitung > 0) timerSetzePhase('vorbereitung', timer.vorbereitung);
+    else timerSetzePhase('belastung', timer.belastung);
+  }
+  timer.laeuft = true;
+  timerPieps(660, 0.12);
+  timer.intervalId = setInterval(timerTick, 1000);
+  timerAnzeige();
+}
+function timerPausiere(){
+  timer.laeuft = false;
+  if(timer.intervalId){ clearInterval(timer.intervalId); timer.intervalId = null; }
+  timerAnzeige();
+}
+function timerReset(){
+  timerPausiere();
+  timer.phase = null; timer.rest = 0; timer.gesamt = 0; timer.runde = 0;
+  render();
+}
+function timerFertig(){
+  timerPausiere();
+  timer.phase = 'fertig'; timer.rest = 0; timer.gesamt = 0;
+  timerPieps(1046, 0.5, 0.4);
+  timerVibriert([140, 90, 140, 90, 220]);
+  timerAnzeige();
+}
+function timerTick(){
+  timer.rest--;
+  if(timer.rest > 0){
+    if(timer.rest <= 3) timerPieps(660, 0.07, 0.22);   // Countdown der letzten Sekunden
+    timerAnzeige();
+    return;
+  }
+  // Phase ist abgelaufen -> naechste Phase bestimmen
+  if(timer.phase === 'vorbereitung'){
+    timerSetzePhase('belastung', timer.belastung);
+  } else if(timer.phase === 'belastung'){
+    if(timer.runde >= timer.runden){ timerFertig(); return; }
+    if(timer.pause > 0){
+      timerSetzePhase('pause', timer.pause);
+    } else {
+      timer.runde++;
+      timerSetzePhase('belastung', timer.belastung);
+    }
+  } else if(timer.phase === 'pause'){
+    timer.runde++;
+    if(timer.runde > timer.runden){ timerFertig(); return; }
+    timerSetzePhase('belastung', timer.belastung);
+  } else {
+    timerFertig(); return;
+  }
+  timerPieps(880, 0.22, 0.4);
+  timerVibriert(220);
+  timerAnzeige();
+}
+/// Aktualisiert nur die betroffenen Elemente statt die ganze Seite neu zu bauen -
+/// ein render() pro Sekunde wuerde Eingabefelder und Scrollposition stoeren.
+function timerAnzeige(){
+  const zeitEl = document.getElementById('timerZeit');
+  if(!zeitEl) return;   // Timer-Fenster ist nicht offen
+  const ph = timerPhaseLabel();
+  zeitEl.textContent = mmss(timer.rest);
+  const phEl = document.getElementById('timerPhase');
+  if(phEl){ phEl.textContent = ph.t; phEl.style.color = ph.c; }
+  const rundeEl = document.getElementById('timerRunde');
+  if(rundeEl) rundeEl.textContent = (timer.phase && timer.phase !== 'fertig') ? `Runde ${timer.runde} von ${timer.runden}` : '';
+  const bar = document.getElementById('timerBar');
+  if(bar) bar.style.width = timerFortschritt() + '%';
+  const btn = document.getElementById('timerStartBtn');
+  if(btn) btn.textContent = timerStartLabel();
+}
+
+/* =========================================================================
+   Plan-Verwaltung
+   ========================================================================= */
+function tiefeKopie(obj){ return JSON.parse(JSON.stringify(obj)); }
+
+/// Verschiebt eine Uebung innerhalb ihres Trainingstags um eine Position und
+/// nummeriert die Reihenfolge danach sauber neu durch.
+function verschiebeUebung(uebungId, richtung){
+  const tag = state.split.tage.find(t => t.uebungen.some(u => u.id === uebungId));
+  if(!tag) return;
+  const sortiert = tag.uebungen.slice().sort((a,b) => a.reihenfolge - b.reihenfolge);
+  const i = sortiert.findIndex(u => u.id === uebungId);
+  const j = i + (richtung === 'hoch' ? -1 : 1);
+  if(i < 0 || j < 0 || j >= sortiert.length) return;
+  const tmp = sortiert[i]; sortiert[i] = sortiert[j]; sortiert[j] = tmp;
+  sortiert.forEach((u, idx) => { u.reihenfolge = idx; });
+  tag.uebungen = sortiert;
+  saveState();
+  render();
+}
+
+/// Fuegt eine Uebung an der gewuenschten Position ein (position = Index davor).
+function fuegeUebungEin(tag, neu, position){
+  const sortiert = tag.uebungen.slice().sort((a,b) => a.reihenfolge - b.reihenfolge);
+  const pos = Math.max(0, Math.min(sortiert.length, position == null ? sortiert.length : position));
+  sortiert.splice(pos, 0, neu);
+  sortiert.forEach((u, i) => { u.reihenfolge = i; });
+  tag.uebungen = sortiert;
+}
+
 /* =========================================================================
    Aktionen
    ========================================================================= */
@@ -1164,7 +1432,11 @@ function openModal(type, ctx){
   ui.trainingMenuOpen = false;
   if(type==='plangenerator') ui.modal = { type, schritt:1, typ:'dreier', vorschauPlan:null };
   else if(type==='alternativen') ui.modal = { type, uebungId: ctx.uebung };
-  else if(type==='uebungHinzufuegen') ui.modal = { type, tagId: gewaehlterTag()?.id, tab:'bibliothek', filter:'', custom:{name:'',einheit:'wiederholungen',saetze:3,wMin:8,wMax:12,gewicht:0,step:2.5} };
+  else if(type==='uebungHinzufuegen'){
+    const t = gewaehlterTag();
+    ui.modal = { type, tagId: t?.id, position: t ? t.uebungen.length : 0, tab:'bibliothek', filter:'',
+                 custom:{name:'',einheit:'wiederholungen',saetze:3,wMin:8,wMax:12,gewicht:0,step:2.5} };
+  }
   else ui.modal = { type };
   render();
 }
@@ -1236,14 +1508,71 @@ function onRootClick(e){
     case 'tauscheUebung': tauscheUebung(el.dataset.uebung, el.dataset.name); break;
     case 'statZeitraum': ui.statistik.zeitraum = arg; render(); break;
     case 'entferneUebung': entferneUebung(el.dataset.uebung, el.dataset.name); break;
+    case 'verschiebeUebung': verschiebeUebung(el.dataset.uebung, el.dataset.richtung); break;
+
+    /* ---- Meine Plaene ---- */
+    case 'planSpeichern': {
+      const vorschlag = `${SPLIT_LABEL[state.split.typ] || 'Plan'} ${new Date().toLocaleDateString('de-DE')}`;
+      const name = prompt('Name für diesen Plan:', vorschlag);
+      if(name && name.trim()){
+        state.plaene = state.plaene || [];
+        state.plaene.unshift({ id: uid(), name: name.trim(), gespeichertAm: new Date().toISOString(), split: tiefeKopie(state.split) });
+        saveState(); render();
+      }
+      break;
+    }
+    case 'planLaden': {
+      const p = (state.plaene||[]).find(x => x.id === el.dataset.plan);
+      if(!p) break;
+      if(!confirm(`„${p.name}" laden? Dein aktuell aktiver Plan wird dadurch ersetzt (vorher ggf. speichern). Deine Trainings-Historie bleibt vollständig erhalten.`)) break;
+      state.split = tiefeKopie(p.split);
+      ui.eingaben = {}; ui.trainingTagIndex = 0; ui.modal = null;
+      saveState(); saveEingaben(); render();
+      break;
+    }
+    case 'planUmbenennen': {
+      const p = (state.plaene||[]).find(x => x.id === el.dataset.plan);
+      if(!p) break;
+      const name = prompt('Neuer Name:', p.name);
+      if(name && name.trim()){ p.name = name.trim(); saveState(); render(); }
+      break;
+    }
+    case 'planLoeschen': {
+      const p = (state.plaene||[]).find(x => x.id === el.dataset.plan);
+      if(!p) break;
+      if(!confirm(`Gespeicherten Plan „${p.name}" löschen? Das kann nicht rückgängig gemacht werden. Dein aktiver Plan und deine Historie bleiben unberührt.`)) break;
+      state.plaene = state.plaene.filter(x => x.id !== p.id);
+      saveState(); render();
+      break;
+    }
+
+    /* ---- Intervall-Timer ---- */
+    case 'timerStartPause': { if(timer.laeuft) timerPausiere(); else timerStart(); break; }
+    case 'timerReset': timerReset(); break;
+    case 'timerSchliessen': { timerPausiere(); closeModal(); break; }
+    case 'timerFeld': {
+      const feld = el.dataset.feld, delta = parseInt(el.dataset.delta,10);
+      const [min,max] = TIMER_GRENZEN[feld];
+      timer[feld] = Math.max(min, Math.min(max, timer[feld] + delta));
+      render();
+      break;
+    }
+    case 'timerFuerUebung': {
+      const sek = parseInt(el.dataset.sek,10);
+      timerPausiere();
+      timer.phase = null; timer.rest = 0; timer.gesamt = 0; timer.runde = 0;
+      if(!isNaN(sek) && sek > 0) timer.belastung = Math.max(5, Math.min(3600, sek));
+      ui.modal = { type:'timer' };
+      render();
+      break;
+    }
     case 'uebungTab': ui.modal.tab = arg; render(); break;
     case 'uebungAusBibliothek': {
       const vorlage = findVorlage(el.dataset.name);
       const tag = state.split.tage.find(t => t.id === ui.modal.tagId);
       if(tag && vorlage){
-        const maxR = tag.uebungen.length ? Math.max(...tag.uebungen.map(u=>u.reihenfolge)) : -1;
-        const neu = erzeugeUebung(vorlage, state.split.trainingsziel, maxR+1);
-        tag.uebungen.push(neu);
+        const neu = erzeugeUebung(vorlage, state.split.trainingsziel, 0);
+        fuegeUebungEin(tag, neu, ui.modal.position);
         ui.eingaben[neu.id] = leereEingabe(neu);
         saveState(); saveEingaben();
       }
@@ -1261,7 +1590,6 @@ function onRootClick(e){
       if(!name) break;
       const tag = state.split.tage.find(t => t.id === ui.modal.tagId);
       if(tag){
-        const maxR = tag.uebungen.length ? Math.max(...tag.uebungen.map(u=>u.reihenfolge)) : -1;
         const wMin = parseInt(c.wMin,10) || 1;
         const neu = {
           id: uid(), name, saetze: parseInt(c.saetze,10) || 3,
@@ -1270,10 +1598,10 @@ function onRootClick(e){
           wiederholungsMax: Math.max(wMin, parseInt(c.wMax,10) || wMin),
           zielWiederholungen: wMin,
           gewichtsSteigerung: parseDe(String(c.step)) || 0,
-          reihenfolge: maxR+1,
+          reihenfolge: 0,
           einheit: c.einheit,
         };
-        tag.uebungen.push(neu);
+        fuegeUebungEin(tag, neu, ui.modal.position);
         ui.eingaben[neu.id] = leereEingabe(neu);
         saveState(); saveEingaben();
       }
