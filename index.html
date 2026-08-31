@@ -665,6 +665,7 @@ const ICONS = {
   check: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>',
   chart: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 20h2v-7H4zM10 20h2V4h-2zM16 20h2v-11h-2z"/></svg>',
   timer: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>',
+  schild: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l7 3v6c0 4-3 7.5-7 9-4-1.5-7-5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>',
 };
 
 /* =========================================================================
@@ -831,6 +832,11 @@ function renderStart(){
         <div><div class="kachel-title">Intervall-Timer</div><div class="kachel-sub">Für Planks, Zirkel &amp; Pausen</div></div>
         <div class="chev">${ICONS.chevron}</div>
       </button>
+      <button class="kachel small" data-act="openModal" data-arg="sicherung">
+        <div class="kachel-icon" style="background:rgba(30,144,255,0.15);">${ICONS.schild}</div>
+        <div><div class="kachel-title">Daten &amp; Sicherung</div><div class="kachel-sub">${state.letzteSicherung ? 'Zuletzt gesichert am ' + germanDate(new Date(state.letzteSicherung)) : 'Noch keine Sicherung'}</div></div>
+        <div class="chev">${ICONS.chevron}</div>
+      </button>
     </div>
   </div>`;
 }
@@ -850,6 +856,8 @@ function trainingKopf(){
           ${eintrag('openModal','timer','⏱ Intervall-Timer')}
           <div class="sep"></div>
           ${eintrag('openModal','plangenerator','🔁 Übungen neu würfeln')}
+          <div class="sep"></div>
+          ${eintrag('openModal','sicherung','💾 Daten & Sicherung')}
         </div>` : ''}
       </div>`;
 }
@@ -1042,6 +1050,7 @@ function renderModal(){
     case 'alternativen': return renderAlternativenModal();
     case 'uebungHinzufuegen': return renderUebungHinzufuegenModal();
     case 'neuesTraining': return renderNeuesTrainingModal();
+    case 'sicherung': return renderSicherungModal();
     case 'timer': return renderTimerModal();
   }
   return '';
@@ -1344,6 +1353,36 @@ function renderNeuesTrainingModal(){
   return sheet('Neues eigenes Training', {act:'closeModal', label:'Abbrechen'}, null, body);
 }
 
+/* ---- Daten & Sicherung ---- */
+function renderSicherungModal(){
+  const anzTrainings = 1 + (state.plaene || []).length;
+  const anzEintraege = state.eintraege.length;
+  const letzte = state.letzteSicherung ? germanDateTime(new Date(state.letzteSicherung)) : null;
+  const body = `
+    <div class="card" style="margin-bottom:18px;">
+      <div class="muted" style="font-size:12px;">Auf diesem Gerät gespeichert</div>
+      <div style="font-weight:700; margin:4px 0;">${anzTrainings} ${anzTrainings===1?'Trainingsplan':'Trainingspläne'} · ${anzEintraege} abgeschlossene ${anzEintraege===1?'Einheit':'Einheiten'}</div>
+      <div class="muted" style="font-size:12px;">${letzte ? 'Letzte Sicherung: ' + letzte : 'Noch keine Sicherung erstellt'}</div>
+    </div>
+
+    <div class="section-h">Sicherung erstellen</div>
+    <div class="muted" style="font-size:13px; margin-bottom:14px;">Deine Daten liegen nur auf diesem Gerät. Leg dir ab und zu eine Sicherung an – in „Dateien“, iCloud oder als Mail an dich selbst. Damit hast du nach einem Handywechsel alles zurück.</div>
+    ${navigator.share ? `<button class="btn-primary btn-compact" style="margin-bottom:10px;" data-act="sicherungTeilen">📤 Sicherung teilen oder ablegen</button>` : ''}
+    <button class="btn-ghost" style="margin-bottom:10px;" data-act="sicherungLaden">⬇︎ Als Datei sichern</button>
+    <button class="btn-ghost" data-act="sicherungKopieren">📋 In die Zwischenablage kopieren</button>
+
+    <hr class="sep" style="margin:22px 0 18px;">
+
+    <div class="section-h">Sicherung einspielen</div>
+    <div class="muted" style="font-size:13px; margin-bottom:14px;">Ersetzt <b>alle</b> Daten auf diesem Gerät durch die Sicherung. Du wirst vorher noch einmal gefragt.</div>
+    <label class="btn-ghost" style="margin-bottom:10px;">📁 Datei auswählen
+      <input type="file" accept=".json,application/json" style="display:none;" onchange="sicherungAusDatei(this)">
+    </label>
+    <textarea id="sicherungText" rows="3" placeholder="…oder kopierten Sicherungstext hier einfügen" style="width:100%; margin-bottom:10px;"></textarea>
+    <button class="btn-ghost" data-act="sicherungAusText">Aus Text wiederherstellen</button>`;
+  return sheet('Daten & Sicherung', {act:'closeModal', label:'Fertig'}, null, body);
+}
+
 /* ---- Intervall-Timer ---- */
 function timerPhaseLabel(){
   switch(timer.phase){
@@ -1407,6 +1446,27 @@ const TIMER_GRENZEN = { vorbereitung:[0,300], belastung:[5,3600], pause:[0,900],
 /// Kurzer, weicher Signalton ueber die WebAudio-API - braucht keine Tondatei.
 /// `versatzSek` plant den Ton auf der Audio-Zeitachse nach vorn, damit mehrere
 /// Toene als saubere Tonfolge klingen (praeziser als setTimeout).
+/// Weckt die Audio-Ausgabe auf. iOS startet den AudioContext angehalten und legt
+/// ihn nach jedem Wechsel in den Hintergrund wieder schlafen - deshalb bei jeder
+/// Bedienung und beim Zurueckkehren zur Seite erneut aufwecken. Der einmalige
+/// stumme Puffer schaltet die Ausgabe auf iOS endgueltig frei.
+function audioAufwecken(){
+  try{
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return;
+    if(!timer.audio) timer.audio = new AC();
+    if(timer.audio.state === 'suspended') timer.audio.resume();
+    if(!timer.entsperrt){
+      const puffer = timer.audio.createBuffer(1, 1, 22050);
+      const quelle = timer.audio.createBufferSource();
+      quelle.buffer = puffer;
+      quelle.connect(timer.audio.destination);
+      quelle.start(0);
+      timer.entsperrt = true;
+    }
+  }catch(e){}
+}
+
 function timerPieps(hz, dauerSek, lautstaerke, versatzSek){
   try{
     const AC = window.AudioContext || window.webkitAudioContext;
@@ -1415,13 +1475,16 @@ function timerPieps(hz, dauerSek, lautstaerke, versatzSek){
     const ctx = timer.audio;
     if(ctx.state === 'suspended') ctx.resume();
     const osc = ctx.createOscillator(), gain = ctx.createGain();
-    osc.type = 'sine';
+    // Dreieck statt Sinus: traegt deutlich besser durch Umgebungsgeraeusche,
+    // klingt aber immer noch weich statt schrill.
+    osc.type = 'triangle';
     osc.frequency.value = hz;
     const t0 = ctx.currentTime + (versatzSek || 0);
-    const laut = lautstaerke || 0.25;
-    // weiches An- und Abschwellen, damit es nicht klickt oder schrill wirkt
+    const laut = lautstaerke || 0.6;
+    // schnelles Anschwellen, gehaltener Ton, weiches Ausklingen
     gain.gain.setValueAtTime(0.0001, t0);
-    gain.gain.exponentialRampToValueAtTime(laut, t0 + 0.02);
+    gain.gain.exponentialRampToValueAtTime(laut, t0 + 0.012);
+    gain.gain.setValueAtTime(laut, t0 + dauerSek * 0.6);
     gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dauerSek);
     osc.connect(gain); gain.connect(ctx.destination);
     osc.start(t0); osc.stop(t0 + dauerSek + 0.03);
@@ -1431,12 +1494,13 @@ function timerPieps(hz, dauerSek, lautstaerke, versatzSek){
 /// Tonfolgen je Ereignis - jede Phase klingt anders, damit man ohne Hinsehen
 /// weiss, was als Naechstes dran ist. Eintrag: [Frequenz, Dauer, Lautstaerke, Versatz]
 const TIMER_TOENE = {
-  start:        [[587, 0.10, 0.16, 0.00], [880, 0.18, 0.20, 0.10]],                          // aufsteigend: es geht los
-  vorbereitung: [[523, 0.14, 0.14, 0.00]],                                                   // ruhig: gleich geht es los
-  belastung:    [[660, 0.09, 0.20, 0.00], [990, 0.22, 0.26, 0.09]],                          // hell aufsteigend: jetzt!
-  pause:        [[660, 0.09, 0.14, 0.00], [440, 0.26, 0.16, 0.09]],                          // weich absteigend: durchatmen
-  countdown:    [[784, 0.05, 0.10, 0.00]],                                                   // dezenter Tick
-  fertig:       [[523, 0.12, 0.20, 0.00], [659, 0.12, 0.22, 0.13], [784, 0.36, 0.26, 0.26]], // kleiner Schlussakkord
+  start:        [[587, 0.13, 0.50, 0.00], [880, 0.28, 0.60, 0.13]],                           // aufsteigend: es geht los
+  vorbereitung: [[659, 0.18, 0.45, 0.00]],                                                    // gleich geht es los
+  countdown:    [[880, 0.13, 0.55, 0.00]],                                                    // klarer Piep bei 3-2-1
+  belastung:    [[988, 0.11, 0.60, 0.00], [1319, 0.36, 0.70, 0.11]],                          // hell + hoch: JETZT!
+  pause:        [[784, 0.13, 0.60, 0.00], [523, 0.38, 0.60, 0.14]],                           // deutlich absteigend: Runde vorbei
+  fertig:       [[523, 0.15, 0.60, 0.00], [659, 0.15, 0.60, 0.16],
+                 [784, 0.15, 0.60, 0.32], [1046, 0.55, 0.68, 0.48]],                          // Schlussfanfare
 };
 function timerTon(name){
   (TIMER_TOENE[name] || []).forEach(([hz, dauer, laut, versatz]) => timerPieps(hz, dauer, laut, versatz));
@@ -1456,6 +1520,7 @@ function timerStart(){
     else timerSetzePhase('belastung', timer.belastung);
   }
   timer.laeuft = true;
+  audioAufwecken();
   timerTon('start');
   timer.intervalId = setInterval(timerTick, 1000);
   timerAnzeige();
@@ -1524,6 +1589,78 @@ function timerAnzeige(){
 }
 
 /* =========================================================================
+   Sicherung (Export / Import)
+   ========================================================================= */
+function sicherungJSON(){
+  return JSON.stringify({ app:'IronLog', version:1, exportiertAm:new Date().toISOString(), daten: state }, null, 2);
+}
+function sicherungDateiname(){
+  const d = new Date(), p = n => String(n).padStart(2,'0');
+  return `ironlog-sicherung-${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}.json`;
+}
+function sicherungNotiere(){ state.letzteSicherung = new Date().toISOString(); saveState(); render(); }
+
+/// Teilen-Dialog des Systems: auf dem iPhone der bequemste Weg, die Sicherung in
+/// „Dateien“/iCloud abzulegen oder sich selbst zu schicken.
+async function sicherungTeilen(){
+  const text = sicherungJSON();
+  try{
+    const datei = new File([text], sicherungDateiname(), { type:'application/json' });
+    if(navigator.canShare && navigator.canShare({ files:[datei] })){
+      await navigator.share({ files:[datei], title:'IronLog-Sicherung' });
+    } else {
+      await navigator.share({ title:'IronLog-Sicherung', text });
+    }
+    sicherungNotiere();
+  }catch(e){ /* vom Nutzer abgebrochen - nichts zu tun */ }
+}
+function sicherungHerunterladen(){
+  try{
+    const blob = new Blob([sicherungJSON()], { type:'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = sicherungDateiname();
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    sicherungNotiere();
+  }catch(e){ alert('Download hat nicht geklappt. Versuch es über „Teilen".'); }
+}
+async function sicherungKopieren(){
+  try{
+    await navigator.clipboard.writeText(sicherungJSON());
+    alert('Sicherung kopiert. Füg sie z.B. in eine Notiz oder eine Mail an dich selbst ein.');
+    sicherungNotiere();
+  }catch(e){
+    alert('Kopieren hat nicht geklappt. Nutz stattdessen „Teilen" oder „Als Datei sichern".');
+  }
+}
+function sicherungEinspielen(text){
+  let daten;
+  try{
+    const roh = JSON.parse(text);
+    daten = (roh && roh.daten) ? roh.daten : roh;
+  }catch(e){ alert('Das ist keine gültige IronLog-Sicherung.'); return; }
+  if(!daten || (!daten.standard && !daten.split)){
+    alert('Das ist keine gültige IronLog-Sicherung.');
+    return;
+  }
+  const anz = Array.isArray(daten.eintraege) ? daten.eintraege.length : 0;
+  if(!confirm(`Sicherung mit ${anz} Trainings-Einträgen einspielen? ALLE Daten auf diesem Gerät werden dadurch ersetzt.`)) return;
+  state = migriereState(daten);
+  ui.eingaben = {}; ui.trainingTagIndex = 0; ui.trainingAnsicht = 'auswahl'; ui.modal = null;
+  saveState(); saveEingaben(); render();
+  alert('Sicherung eingespielt.');
+}
+function sicherungAusDatei(input){
+  const datei = input.files && input.files[0];
+  if(!datei) return;
+  const leser = new FileReader();
+  leser.onload = () => sicherungEinspielen(String(leser.result));
+  leser.readAsText(datei);
+  input.value = '';
+}
+
+/* =========================================================================
    Plan-Verwaltung
    ========================================================================= */
 function tiefeKopie(obj){ return JSON.parse(JSON.stringify(obj)); }
@@ -1573,6 +1710,7 @@ function openModal(type, ctx){
 function closeModal(){ ui.modal = null; render(); }
 
 function onRootClick(e){
+  audioAufwecken();
   const el = e.target.closest('[data-act]');
   if(!el) return;
   const act = el.dataset.act, arg = el.dataset.arg;
@@ -1707,6 +1845,17 @@ function onRootClick(e){
       if(state.aktivId === p.id) state.aktivId = 'standard';   // aktives geloescht -> zurueck auf Standard
       ui.eingaben = {}; ui.trainingTagIndex = 0;
       saveState(); saveEingaben(); render();
+      break;
+    }
+
+    /* ---- Daten & Sicherung ---- */
+    case 'sicherungTeilen': sicherungTeilen(); break;
+    case 'sicherungLaden': sicherungHerunterladen(); break;
+    case 'sicherungKopieren': sicherungKopieren(); break;
+    case 'sicherungAusText': {
+      const feld = document.getElementById('sicherungText');
+      if(feld && feld.value.trim()) sicherungEinspielen(feld.value);
+      else alert('Bitte zuerst den Sicherungstext einfügen.');
       break;
     }
 
@@ -1886,6 +2035,7 @@ function entferneUebung(uebungId, name){
 /* =========================================================================
    Init
    ========================================================================= */
+document.addEventListener('visibilitychange', () => { if(!document.hidden) audioAufwecken(); });
 document.getElementById('root').addEventListener('click', onRootClick);
 document.getElementById('root').addEventListener('input', onRootInput);
 render();
