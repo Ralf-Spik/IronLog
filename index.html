@@ -2014,9 +2014,19 @@ function bereiteAbschlussVor(){
   const zeilen = tag.uebungen.slice().sort((a,b)=>a.reihenfolge-b.reihenfolge).map(uebung => {
     const einheit = uebung.einheit || 'wiederholungen';
     const eingabe = ui.eingaben[uebung.id] || leereEingabe(uebung);
+    // Massgeblich ist nur das Wiederholungs-/Sekundenfeld. Das Gewichtsfeld darf leer
+    // bleiben - bei Koerpergewichts-Uebungen (Dips, Klimmzuege, Plank) ist es das
+    // immer, und ein leeres Feld darf den Satz nicht verwerfen.
     const ausgefuellte = eingabe.saetze
-      .filter(s => s.gewicht.trim()!=='' && s.wiederholungen.trim()!=='')
-      .map(s => ({ gewicht: parseDe(s.gewicht) || uebung.gewicht, wiederholungen: parseInt(s.wiederholungen,10) || 0 }));
+      .filter(s => String(s.wiederholungen).trim() !== '')
+      .map(s => {
+        const gStr = String(s.gewicht).trim();
+        const g = gStr === '' ? uebung.gewicht : parseDe(gStr);
+        return {
+          gewicht: isNaN(g) ? uebung.gewicht : g,
+          wiederholungen: parseInt(s.wiederholungen, 10) || 0
+        };
+      });
     const notizText = eingabe.notiz.trim();
     const ergebnis = berechneProgression(uebung.gewicht, uebung.saetze, uebung.gewichtsSteigerung, uebung.wiederholungsMin, uebung.wiederholungsMax, uebung.zielWiederholungen, ausgefuellte, aktiverPlan().trainingsziel, einheit);
     return { uebungId: uebung.id, uebungName: uebung.name, einheit, ausgefuellteSaetze: ausgefuellte, notizText, ergebnis };
