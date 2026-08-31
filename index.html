@@ -133,6 +133,11 @@
   .timer-runde{ font-size:14px; color:var(--iron-muted); min-height:18px; }
   .timer-ring{ height:6px; background:var(--iron-input); border-radius:999px; overflow:hidden; margin:16px 0 2px; }
   .timer-ring > div{ height:100%; background:var(--iron-grad); border-radius:999px; transition:width .25s linear; }
+  .toast{ position:fixed; left:16px; right:16px; bottom:calc(78px + env(safe-area-inset-bottom)); z-index:60;
+          background:var(--iron-card); color:#fff; border:1px solid var(--iron-sep); border-radius:12px;
+          padding:13px 16px; font-size:14px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5);
+          opacity:0; transform:translateY(10px); transition:opacity .2s ease, transform .2s ease; pointer-events:none; }
+  .toast.an{ opacity:1; transform:none; }
   .badge{ font-size:12px; font-weight:600; color:var(--iron-accent); background:rgba(30,144,255,0.15); padding:4px 9px; border-radius:999px; white-space:nowrap; }
   .col-head{ display:flex; font-size:11px; font-weight:600; color:var(--iron-muted); margin:10px 0 4px; }
   .col-head .c-satz{ flex:1; margin-left:36px; }
@@ -857,7 +862,9 @@ function trainingKopf(){
           <div class="sep"></div>
           ${eintrag('openModal','plangenerator','🔁 Übungen neu würfeln')}
           <div class="sep"></div>
-          ${eintrag('openModal','sicherung','💾 Daten & Sicherung')}
+          ${eintrag('sicherungSchnell','','💾 Jetzt sichern')}
+          <div class="sep"></div>
+          ${eintrag('openModal','sicherung','🗄 Daten & Sicherung')}
         </div>` : ''}
       </div>`;
 }
@@ -1370,6 +1377,7 @@ function renderSicherungModal(){
     ${navigator.share ? `<button class="btn-primary btn-compact" style="margin-bottom:10px;" data-act="sicherungTeilen">📤 Sicherung teilen oder ablegen</button>` : ''}
     <button class="btn-ghost" style="margin-bottom:10px;" data-act="sicherungLaden">⬇︎ Als Datei sichern</button>
     <button class="btn-ghost" data-act="sicherungKopieren">📋 In die Zwischenablage kopieren</button>
+    <div class="muted" style="font-size:12px; margin-top:10px; text-align:center;">Dateiname: <b>${sicherungDateiname()}</b><br>Datum und Uhrzeit stecken im Namen.</div>
 
     <div class="card" style="margin-top:16px; background:rgba(30,144,255,0.08);">
       <div style="font-weight:700; font-size:14px; margin-bottom:6px;">📱 ➜ 💻 Auf iPhone und iPad nutzen</div>
@@ -1602,14 +1610,57 @@ function timerAnzeige(){
 /* =========================================================================
    Sicherung (Export / Import)
    ========================================================================= */
+let toastTimer = null;
+/// Kurze Einblendung am unteren Rand - unaufdringlicher als ein Dialog.
+/// Haengt am body, ueberlebt also das Neuzeichnen von #root.
+function toast(text){
+  let el = document.getElementById('toast');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'toast'; el.className = 'toast';
+    document.body.appendChild(el);
+  }
+  el.textContent = text;
+  // Reflow erzwingen statt requestAnimationFrame: rAF wird angehalten, wenn die
+  // Seite gerade nicht sichtbar ist - der Hinweis bliebe dann unsichtbar haengen.
+  el.classList.remove('an');
+  void el.offsetWidth;
+  el.classList.add('an');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('an'), 2800);
+}
+
 function sicherungJSON(){
   return JSON.stringify({ app:'IronLog', version:1, exportiertAm:new Date().toISOString(), daten: state }, null, 2);
 }
+/// Datum und Uhrzeit im Namen: so kollidieren mehrere Sicherungen am selben Tag
+/// nicht und die Dateien sortieren sich von allein chronologisch.
 function sicherungDateiname(){
   const d = new Date(), p = n => String(n).padStart(2,'0');
-  return `ironlog-sicherung-${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}.json`;
+  return `ironlog-sicherung-${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}_${p(d.getHours())}-${p(d.getMinutes())}.json`;
 }
 function sicherungNotiere(){ state.letzteSicherung = new Date().toISOString(); saveState(); render(); }
+
+/// Ein Tipp im Menue: oeffnet direkt den Speichern-Dialog des Systems, ohne
+/// Umweg ueber das Sicherungs-Fenster. Auf dem iPhone landet man damit in einem
+/// Schritt bei „In Dateien sichern" und kann den Ordner waehlen.
+async function sicherungSchnell(){
+  ui.trainingMenuOpen = false;
+  render();
+  const name = sicherungDateiname();
+  let datei = null;
+  try{ datei = new File([sicherungJSON()], name, { type:'application/json' }); }catch(e){}
+  if(datei && navigator.canShare && navigator.canShare({ files:[datei] })){
+    try{
+      await navigator.share({ files:[datei], title:'IronLog-Sicherung' });
+      sicherungNotiere();
+      toast('Gesichert: ' + name);
+    }catch(e){ /* vom Nutzer abgebrochen */ }
+    return;
+  }
+  sicherungHerunterladen();
+  toast('Gesichert: ' + name);
+}
 
 /// Teilen-Dialog des Systems: auf dem iPhone der bequemste Weg, die Sicherung in
 /// „Dateien“/iCloud abzulegen oder sich selbst zu schicken.
@@ -1639,8 +1690,8 @@ function sicherungHerunterladen(){
 async function sicherungKopieren(){
   try{
     await navigator.clipboard.writeText(sicherungJSON());
-    alert('Sicherung kopiert. Füg sie z.B. in eine Notiz oder eine Mail an dich selbst ein.');
     sicherungNotiere();
+    toast('Kopiert – füg sie z.B. in eine Notiz ein');
   }catch(e){
     alert('Kopieren hat nicht geklappt. Nutz stattdessen „Teilen" oder „Als Datei sichern".');
   }
@@ -1660,7 +1711,7 @@ function sicherungEinspielen(text){
   state = migriereState(daten);
   ui.eingaben = {}; ui.trainingTagIndex = 0; ui.trainingAnsicht = 'auswahl'; ui.modal = null;
   saveState(); saveEingaben(); render();
-  alert('Sicherung eingespielt.');
+  toast(`Sicherung eingespielt – ${anz} Einträge wiederhergestellt`);
 }
 function sicherungAusDatei(input){
   const datei = input.files && input.files[0];
@@ -1860,6 +1911,7 @@ function onRootClick(e){
     }
 
     /* ---- Daten & Sicherung ---- */
+    case 'sicherungSchnell': sicherungSchnell(); break;
     case 'sicherungTeilen': sicherungTeilen(); break;
     case 'sicherungLaden': sicherungHerunterladen(); break;
     case 'sicherungKopieren': sicherungKopieren(); break;
