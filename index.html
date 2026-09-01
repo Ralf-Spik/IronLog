@@ -294,8 +294,15 @@ function uid(){ return (crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.n
 /* =========================================================================
    Übungsbibliothek (57 Übungen)
    ========================================================================= */
-function u(name, gruppe, s, wMin, wMax, kg, step, grund){
-  return { name, gruppe, saetze:s, wMin, wMax, kg, step, grund };
+/// kategorie: 'kraft' (Standard) | 'yoga' | 'mobility'
+/// einheit:    'wiederholungen' (Standard) | 'sekunden'
+function u(name, gruppe, s, wMin, wMax, kg, step, grund, kategorie, einheit){
+  return { name, gruppe, saetze:s, wMin, wMax, kg, step, grund,
+           kategorie: kategorie || 'kraft', einheit: einheit || 'wiederholungen' };
+}
+/// Kurzschreibweise fuer Yoga/Mobility: nie Gewicht, nie Gewichtssteigerung.
+function r(name, gruppe, s, wMin, wMax, kategorie, einheit){
+  return u(name, gruppe, s, wMin, wMax, 0, 0, false, kategorie, einheit);
 }
 const BIBLIOTHEK = [
   // Brust horizontal
@@ -406,12 +413,44 @@ const BIBLIOTHEK = [
   u("Vorgebeugtes Seitheben (KH)","schultern",3,12,15,12,2.0,false),
   u("Face Pulls (Kabel)","schultern",3,15,20,20,2.5,false),
   u("Upright Row (Langhantel)","schultern",3,10,15,30,2.5,false),
+
+  // ── Yoga ───────────────────────────────────────────────────────────
+  r("Sonnengruß","yogaFlow",3,30,90,'yoga','sekunden'),
+  r("Katze-Kuh","yogaFlow",2,30,60,'yoga','sekunden'),
+  r("Herabschauender Hund","yogaHalten",3,30,60,'yoga','sekunden'),
+  r("Kobra","yogaHalten",3,20,45,'yoga','sekunden'),
+  r("Kindhaltung","yogaHalten",2,30,90,'yoga','sekunden'),
+  r("Krieger II","yogaHalten",2,30,60,'yoga','sekunden'),
+  r("Baum (Gleichgewicht)","yogaHalten",2,20,45,'yoga','sekunden'),
+  r("Taube","yogaHalten",2,30,60,'yoga','sekunden'),
+  r("Drehsitz","yogaHalten",2,30,60,'yoga','sekunden'),
+  r("Brücke","yogaHalten",3,20,45,'yoga','sekunden'),
+  r("Vorbeuge im Stehen","yogaHalten",2,30,60,'yoga','sekunden'),
+  r("Totenstellung (Entspannung)","yogaHalten",1,60,180,'yoga','sekunden'),
+
+  // ── Mobility ───────────────────────────────────────────────────────
+  r("Schulterkreisen","mobilSchulter",2,10,20,'mobility','wiederholungen'),
+  r("Schulterdehnung (Türrahmen)","mobilSchulter",2,30,45,'mobility','sekunden'),
+  r("Nacken-Dehnung","mobilSchulter",2,20,40,'mobility','sekunden'),
+  r("Handgelenk-Mobilisation","mobilSchulter",2,10,20,'mobility','wiederholungen'),
+  r("Brustwirbel-Rotation","mobilRuecken",2,8,15,'mobility','wiederholungen'),
+  r("Katze-Kuh (Mobilisation)","mobilRuecken",2,10,20,'mobility','wiederholungen'),
+  r("Rückenrolle (Foam Roller)","mobilRuecken",2,30,60,'mobility','sekunden'),
+  r("Hüftbeuger-Dehnung","mobilHueft",2,30,60,'mobility','sekunden'),
+  r("90/90 Hüftrotation","mobilHueft",2,8,15,'mobility','wiederholungen'),
+  r("Tiefe Hocke (halten)","mobilHueft",2,30,90,'mobility','sekunden'),
+  r("Ausfallschritt mit Rotation","mobilHueft",2,8,12,'mobility','wiederholungen'),
+  r("Beinrückseite dehnen","mobilBeine",2,30,60,'mobility','sekunden'),
+  r("Wadendehnung","mobilBeine",2,30,45,'mobility','sekunden'),
+  r("Beinpendel","mobilBeine",2,10,20,'mobility','wiederholungen'),
 ];
 
 const GRUPPEN_KURZ = {
   brustHorizontal:"Brust", brustSchraeg:"Schräg", brustIsolation:"Isolation", trizeps:"Trizeps",
   rueckenVertikal:"Lat", rueckenHorizontal:"Rudern", bizeps:"Bizeps", quadrizeps:"Quad",
-  hintereKette:"Hamstring", waden:"Waden", bauch:"Core", schultern:"Schulter"
+  hintereKette:"Hamstring", waden:"Waden", bauch:"Core", schultern:"Schulter",
+  yogaFlow:"Flow", yogaHalten:"Halten",
+  mobilSchulter:"Schulter", mobilRuecken:"Rücken", mobilHueft:"Hüfte", mobilBeine:"Beine"
 };
 
 function trainingsPrioritaet(gruppe, grund){
@@ -428,6 +467,13 @@ function trainingsPrioritaet(gruppe, grund){
     case 'trizeps': return grund ? 120 : 125;
     case 'waden': return 140;
     case 'bauch': return 150;
+    // Ruhige Kategorien: erst mobilisieren, dann halten, Entspannung zuletzt
+    case 'mobilSchulter': return 200;
+    case 'mobilRuecken': return 210;
+    case 'mobilHueft': return 220;
+    case 'mobilBeine': return 230;
+    case 'yogaFlow': return 240;
+    case 'yogaHalten': return 250;
   }
   return 999;
 }
@@ -441,14 +487,25 @@ function alternativenFuer(name){
 /* =========================================================================
    Trainingsziel-Rechner
    ========================================================================= */
-const ZIEL_LABEL = { hypertrophie:"Hypertrophie", maximalkraft:"Maximalkraft", kraftausdauer:"Kraftausdauer" };
-const ZIEL_ICON  = { hypertrophie:'💪', maximalkraft:'⚡', kraftausdauer:'🏃' };
+const ZIEL_LABEL = { hypertrophie:"Hypertrophie", maximalkraft:"Maximalkraft", kraftausdauer:"Kraftausdauer",
+                     yoga:"Yoga", mobility:"Mobility" };
+const ZIEL_ICON  = { hypertrophie:'💪', maximalkraft:'⚡', kraftausdauer:'🏃', yoga:'🧘', mobility:'🤸' };
+const KRAFT_ZIELE = ['hypertrophie','maximalkraft','kraftausdauer'];
+const RUHIGE_ZIELE = ['yoga','mobility'];
+/// Bei Yoga und Mobility geht es ums regelmaessige Machen, nicht um Leistung:
+/// kein Gewicht, keine Gewichtssteigerung, keine automatische Progression.
+function zielOhneGewicht(ziel){ return RUHIGE_ZIELE.includes(ziel); }
 const ZIEL_BESCHREIBUNG = {
   hypertrophie: "Muskelaufbau · 6–15 Wdh. · 3–4 Sätze",
   maximalkraft: "Kraftaufbau · 3–6 Wdh. · 4–5 Sätze",
   kraftausdauer: "Ausdauer & Definition · 15–25 Wdh. · 2–3 Sätze",
+  yoga: "Halten & Flow · ohne Gewicht · keine Steigerung",
+  mobility: "Beweglichkeit · ohne Gewicht · keine Steigerung",
 };
 function zielKennzahlen(ziel, grund){
+  // Yoga/Mobility haben keine einheitlichen Zielvorgaben - dort gilt, was bei der
+  // Uebung selbst hinterlegt ist (Haltedauer bzw. Wiederholungen).
+  if(zielOhneGewicht(ziel)) return null;
   switch(ziel){
     case 'hypertrophie': return grund ? {saetze:4,wMin:6,wMax:10,faktor:1.0} : {saetze:3,wMin:10,wMax:15,faktor:1.0};
     case 'maximalkraft': return grund ? {saetze:5,wMin:3,wMax:6,faktor:1.5} : {saetze:4,wMin:6,wMax:8,faktor:1.2};
@@ -468,15 +525,31 @@ function schaetzeGewichtEpley(aktuellesGewicht, aktuelleZielWdh, neueZielWdh, sc
 }
 function erzeugeUebung(vorlage, ziel, reihenfolge){
   const k = zielKennzahlen(ziel, vorlage.grund);
+  if(!k){
+    // Ruhiges Ziel: Werte der Vorlage uebernehmen, ohne Gewicht und Steigerung
+    return {
+      id: uid(), name: vorlage.name, saetze: vorlage.saetze, gewicht: 0,
+      wiederholungsMin: vorlage.wMin, wiederholungsMax: vorlage.wMax,
+      zielWiederholungen: vorlage.wMin, gewichtsSteigerung: 0, reihenfolge,
+      einheit: vorlage.einheit || 'wiederholungen'
+    };
+  }
   return {
     id: uid(), name: vorlage.name, saetze: k.saetze, gewicht: vorlage.kg,
     wiederholungsMin: k.wMin, wiederholungsMax: k.wMax, zielWiederholungen: k.wMin,
-    gewichtsSteigerung: vorlage.step * k.faktor, reihenfolge, einheit: 'wiederholungen'
+    gewichtsSteigerung: vorlage.step * k.faktor, reihenfolge,
+    einheit: vorlage.einheit || 'wiederholungen'
   };
 }
 // Passt Sätze/Wdh-Bereich/Steigerung UND das Arbeitsgewicht (Epley-Schätzung) aller
 // Übungen an ein neues Trainingsziel an. Historie bleibt unangetastet.
 function wendeTrainingszielAn(ziel, split){
+  if(zielOhneGewicht(ziel) || zielOhneGewicht(split.trainingsziel)){
+    // Ein Wechsel zwischen Kraft und Yoga/Mobility waere sinnlos (voellig andere
+    // Uebungen und Einheiten) und wird in der Oberflaeche gar nicht angeboten.
+    split.trainingsziel = ziel;
+    return;
+  }
   for(const tag of split.tage){
     for(const uebung of tag.uebungen){
       const vorlage = findVorlage(uebung.name);
@@ -500,6 +573,8 @@ function wendeTrainingszielAn(ziel, split){
    ========================================================================= */
 function berechneProgression(zielGewicht, sollSaetze, gewichtsSteigerung, wMin, wMax, zielWdh, tatsaechlicheSaetze, ziel, einheit){
   const gleich = () => ({ neuesGewicht: zielGewicht, neueZielWiederholungen: zielWdh, status:'gleichBleiben' });
+  // Yoga/Mobility: keine automatische Steigerung - Dranbleiben ist das Ziel.
+  if(zielOhneGewicht(ziel)) return gleich();
   // Ein Satz gilt auch als erfuellt, wenn mehr Gewicht bei weniger (aber noch im Bereich
   // liegenden) Wiederholungen bewegt wurde und die geschaetzte Belastung (Epley) mindestens
   // der Zielvorgabe entspricht - sonst wuerde ein schwereres Gewicht faelschlich als
@@ -535,7 +610,23 @@ const SPLIT_BESCHREIBUNG = {
   dreier: "Brust/Trizeps · Rücken/Bizeps · Beine/Bauch · 3 Tage",
   ganzkoerper: "Alle Muskelgruppen pro Einheit · 1 Trainingstag",
 };
+/// Yoga/Mobility kennen keine Split-Aufteilung: ein Trainingstag mit einer
+/// sinnvollen Auswahl aus der jeweiligen Kategorie, den man danach frei anpasst.
+function generiereRuhigenPlan(ziel){
+  const kandidaten = BIBLIOTHEK.filter(v => v.kategorie === ziel);
+  const nachGruppe = {};
+  kandidaten.forEach(v => { (nachGruppe[v.gruppe] = nachGruppe[v.gruppe] || []).push(v); });
+  const auswahl = [];
+  Object.keys(nachGruppe).forEach(g => {
+    const liste = nachGruppe[g].slice().sort(() => Math.random() - 0.5);
+    auswahl.push(...liste.slice(0, 2));   // zwei je Bereich
+  });
+  auswahl.sort((a,b) => trainingsPrioritaet(a.gruppe,a.grund) - trainingsPrioritaet(b.gruppe,b.grund));
+  return { typ:'ganzkoerper', ziel, tage:[{ name: ZIEL_LABEL[ziel], reihenfolge:1, uebungen: auswahl }] };
+}
+
 function generiereNeuerPlan(typ, ziel, aktuelleUebungsNamen){
+  if(zielOhneGewicht(ziel)) return generiereRuhigenPlan(ziel);
   const gepickt = new Set(aktuelleUebungsNamen);
   function waehle(gruppe){
     const kandidaten = BIBLIOTHEK.filter(v => v.gruppe === gruppe);
@@ -1018,15 +1109,19 @@ function renderTraining(){
 
 function renderUebungCard(uebung, idx, anzahl){
   const einheit = uebung.einheit || 'wiederholungen';
+  // Bei Yoga/Mobility wird gar kein Gewicht erfasst - die Spalte entfaellt komplett.
+  const ohneGewicht = zielOhneGewicht(aktiverPlan().trainingsziel);
   const eingabe = ui.eingaben[uebung.id] || leereEingabe(uebung);
-  const vorgabe = uebung.gewicht>0 ? `${fmt(uebung.gewicht)} kg × ${uebung.zielWiederholungen} ${unitLabel(einheit)}` : `Ziel: ${uebung.zielWiederholungen} ${unitLabel(einheit)}`;
+  const vorgabe = (!ohneGewicht && uebung.gewicht>0)
+    ? `${fmt(uebung.gewicht)} kg × ${uebung.zielWiederholungen} ${unitLabel(einheit)}`
+    : `Ziel: ${uebung.zielWiederholungen} ${unitLabel(einheit)}`;
   let rows = '';
   eingabe.saetze.forEach((s,i) => {
     rows += `<div class="satz-row">
       <button class="minus-btn" style="opacity:${eingabe.saetze.length>1?1:0}" ${eingabe.saetze.length<=1?'disabled':''} data-act="satzEntfernen" data-uebung="${uebung.id}" data-idx="${i}">✕</button>
       <span class="idx">${i+1}</span>
-      <input type="text" inputmode="decimal" value="${esc(s.gewicht)}" placeholder="0" data-act="input-gewicht" data-uebung="${uebung.id}" data-idx="${i}">
-      <span class="unit">kg</span>
+      ${ohneGewicht ? '' : `<input type="text" inputmode="decimal" value="${esc(s.gewicht)}" placeholder="0" data-act="input-gewicht" data-uebung="${uebung.id}" data-idx="${i}">
+      <span class="unit">kg</span>`}
       <input type="text" inputmode="numeric" value="${esc(s.wiederholungen)}" placeholder="0" data-act="input-wdh" data-uebung="${uebung.id}" data-idx="${i}">
       <span class="unit">${unitLabel(einheit)}</span>
     </div>`;
@@ -1045,7 +1140,7 @@ function renderUebungCard(uebung, idx, anzahl){
       <button class="mini-btn danger" data-act="entferneUebung" data-uebung="${uebung.id}" data-name="${esc(uebung.name)}" aria-label="Entfernen">🗑</button>
     </div>
     <hr class="sep" style="margin:10px 0;">
-    <div class="col-head"><span class="c-satz">Satz</span><span class="c-g">Gewicht</span><span class="c-w">${unitLabel(einheit)}</span></div>
+    <div class="col-head"><span class="c-satz">Satz</span>${ohneGewicht ? '' : '<span class="c-g">Gewicht</span>'}<span class="c-w">${unitLabel(einheit)}</span></div>
     ${rows}
     <div class="add-satz"><button data-act="satzHinzufuegen" data-uebung="${uebung.id}">+ Satz hinzufügen</button></div>
     <hr class="sep" style="margin:10px 0;">
@@ -1194,8 +1289,17 @@ function renderStatistikModal(){
 function renderEinstellungenModal(){
   const aktuell = aktiverPlan().trainingsziel;
   const iconMap = ZIEL_ICON;
+  if(zielOhneGewicht(aktuell)){
+    const ruhig = `<div class="card" style="text-align:center;">
+      <div style="font-size:34px;">${ZIEL_ICON[aktuell]}</div>
+      <div style="font-weight:700; margin:8px 0 6px;">${ZIEL_LABEL[aktuell]}</div>
+      <div class="muted" style="font-size:13px;">Hier geht es ums regelmäßige Machen, nicht um Leistung. Deshalb gibt es kein Gewicht, keine Gewichtssteigerung und keine automatische Anpassung – deine Vorgaben bleiben so, wie du sie einträgst.</div>
+    </div>
+    <div class="muted" style="font-size:13px; text-align:center; margin-top:14px;">Ein Wechsel zu einem Kraft-Ziel ist hier nicht vorgesehen – dafür legst du am besten ein eigenes Kraft-Training an.</div>`;
+    return sheet('Trainingsart', {act:'closeModal', label:'Fertig'}, null, ruhig);
+  }
   const body = `<div class="muted" style="text-align:center; margin-bottom:14px; font-size:14px;">Das Trainingsziel bestimmt Wiederholungsbereich, Satzzahl und Gewichtssteigerung für ALLE Übungen deines Plans.</div>
-    ${['hypertrophie','maximalkraft','kraftausdauer'].map(z => `
+    ${KRAFT_ZIELE.map(z => `
       <button class="ziel-card ${aktuell===z?'sel':''}" data-act="waehleZiel" data-arg="${z}">
         <div class="ziel-icon ${aktuell===z?'sel':''}">${iconMap[z]}</div>
         <div><div style="font-weight:700;">${ZIEL_LABEL[z]}</div><div class="muted" style="font-size:12px;">${ZIEL_BESCHREIBUNG[z]}</div></div>
@@ -1249,6 +1353,9 @@ function statusInfo(status){
 }
 function naechsteVorgabe(erg, einheit){
   const einh = unitLabel(einheit);
+  if(zielOhneGewicht(aktiverPlan().trainingsziel)){
+    return 'Eingetragen – dranbleiben zählt hier mehr als steigern.';
+  }
   const vorgabeText = erg.neuesGewicht>0 ? `${fmt(erg.neuesGewicht)} kg × ${erg.neueZielWiederholungen} ${einh}` : `${erg.neueZielWiederholungen} ${einh}`;
   if(erg.status==='gewichtRauf') return `Nächstes Mal: ${vorgabeText} – Gewicht rauf!`;
   if(erg.status==='wiederholungenRauf') return `Nächstes Mal: ${vorgabeText} – ${einh} rauf!`;
@@ -1338,10 +1445,17 @@ function renderAlternativenModal(){
 /* ---- Uebung hinzufuegen (aus Bibliothek oder eigene) ---- */
 function renderBibliothekListe(filterText){
   const q = (filterText||'').trim().toLowerCase();
-  const treffer = BIBLIOTHEK.filter(v => !q || v.name.toLowerCase().includes(q)).slice(0,40);
+  // Zur Trainingsart passende Uebungen nach oben, der Rest bleibt trotzdem findbar.
+  const eigene = aktiverPlan().trainingsziel;
+  const passend = zielOhneGewicht(eigene) ? eigene : 'kraft';
+  const treffer = BIBLIOTHEK
+    .filter(v => !q || v.name.toLowerCase().includes(q))
+    .sort((a,b) => (a.kategorie === passend ? 0 : 1) - (b.kategorie === passend ? 0 : 1))
+    .slice(0, 40);
+  const marke = { kraft:'', yoga:'🧘 ', mobility:'🤸 ' };
   return `<div style="border-radius:14px; overflow:hidden;">
     ${treffer.map((v,i) => `<div class="alt-item" data-act="uebungAusBibliothek" data-name="${esc(v.name)}">
-      <div><div class="name">${esc(v.name)}</div><div class="meta">${GRUPPEN_KURZ[v.gruppe]} · ${v.saetze} Sätze · ${v.wMin}–${v.wMax} Wdh.</div></div>
+      <div><div class="name">${marke[v.kategorie] || ''}${esc(v.name)}</div><div class="meta">${GRUPPEN_KURZ[v.gruppe]} · ${v.saetze} Sätze · ${v.wMin}–${v.wMax} ${unitLabel(v.einheit)}</div></div>
       <div class="muted">${ICONS.chevron}</div>
     </div>${i<treffer.length-1?'<hr class="sep">':''}`).join('')}
     ${!treffer.length ? `<div class="empty-hint">Keine Treffer.</div>` : ''}
@@ -1384,8 +1498,9 @@ function renderUebungHinzufuegenModal(){
       <div class="field-row"><span class="lbl" style="min-width:90px;">${unitLabel(c.einheit)} Min–Max</span>
         <input type="text" inputmode="numeric" style="width:54px;" value="${esc(String(c.wMin))}" data-act="customField" data-field="wMin"> – <input type="text" inputmode="numeric" style="width:54px;" value="${esc(String(c.wMax))}" data-act="customField" data-field="wMax">
       </div>
+      ${zielOhneGewicht(aktiverPlan().trainingsziel) ? '' : `
       <div class="field-row"><span class="lbl" style="min-width:90px;">Gewicht (kg)</span><input type="text" inputmode="decimal" style="width:70px;" value="${esc(String(c.gewicht))}" data-act="customField" data-field="gewicht"><span class="muted" style="font-size:12px; margin-left:8px;">0 = Körpergewicht</span></div>
-      <div class="field-row"><span class="lbl" style="min-width:90px;">Steigerung (kg)</span><input type="text" inputmode="decimal" style="width:70px;" value="${esc(String(c.step))}" data-act="customField" data-field="step"></div>
+      <div class="field-row"><span class="lbl" style="min-width:90px;">Steigerung (kg)</span><input type="text" inputmode="decimal" style="width:70px;" value="${esc(String(c.step))}" data-act="customField" data-field="step"></div>`}
       <button class="btn-primary" style="margin-top:16px;" data-act="uebungEigeneHinzufuegen">${ICONS.check} Übung hinzufügen</button>`;
   }
   return sheet('Übung hinzufügen', {act:'closeModal', label:'Abbrechen'}, null, body);
@@ -1395,25 +1510,39 @@ function renderUebungHinzufuegenModal(){
 function renderNeuesTrainingModal(){
   const m = ui.modal;
   const body = `
-    <div class="muted" style="text-align:center; margin-bottom:16px; font-size:14px;">Du bekommst eine fertige Vorlage passend zu deinem Ziel. Danach kannst du sie frei anpassen – Übungen tauschen, ergänzen, Reihenfolge ändern. Die automatische Steigerung läuft ganz normal weiter.</div>
+    <div class="muted" style="text-align:center; margin-bottom:16px; font-size:14px;">Du bekommst eine fertige Vorlage, die du danach frei anpassen kannst – Übungen tauschen, ergänzen, Reihenfolge ändern.</div>
     <div class="field-row" style="margin-bottom:16px;">
       <span class="lbl" style="min-width:60px;">Name</span>
       <input type="text" style="flex:1; min-width:0;" value="${esc(m.name)}" data-act="neuName" placeholder="z.B. Zuhause">
     </div>
-    <div class="muted" style="font-size:12px; font-weight:600; margin-bottom:8px;">Aufteilung</div>
-    ${['zweier','dreier','ganzkoerper'].map(t => `
-      <button class="typ-card ${m.typ===t?'sel':''}" data-act="neuTyp" data-arg="${t}">
-        <div class="ziel-icon ${m.typ===t?'sel':''}">${t==='zweier'?'2️⃣':t==='dreier'?'3️⃣':'🔄'}</div>
-        <div><div style="font-weight:700;">${SPLIT_LABEL[t]}</div><div class="muted" style="font-size:12px;">${SPLIT_BESCHREIBUNG[t]}</div></div>
-        <div class="check ${m.typ===t?'sel':''}">${m.typ===t?'●':'○'}</div>
+    <div class="muted" style="font-size:12px; font-weight:600; margin-bottom:8px;">Art des Trainings</div>
+    ${[['kraft','🏋️','Krafttraining','Mit Gewicht · automatische Steigerung'],
+       ['yoga', ZIEL_ICON.yoga, 'Yoga', ZIEL_BESCHREIBUNG.yoga],
+       ['mobility', ZIEL_ICON.mobility, 'Mobility', ZIEL_BESCHREIBUNG.mobility]].map(([a,ic,titel,text]) => `
+      <button class="ziel-card ${m.art===a?'sel':''}" data-act="neuArt" data-arg="${a}">
+        <div class="ziel-icon ${m.art===a?'sel':''}">${ic}</div>
+        <div><div style="font-weight:700;">${titel}</div><div class="muted" style="font-size:12px;">${text}</div></div>
+        <div class="check ${m.art===a?'sel':''}">${m.art===a?'●':'○'}</div>
       </button>`).join('')}
-    <div class="muted" style="font-size:12px; font-weight:600; margin:16px 0 8px;">Trainingsziel</div>
-    ${['hypertrophie','maximalkraft','kraftausdauer'].map(z => `
-      <button class="ziel-card ${m.ziel===z?'sel':''}" data-act="neuZiel" data-arg="${z}">
-        <div class="ziel-icon ${m.ziel===z?'sel':''}">${ZIEL_ICON[z]}</div>
-        <div><div style="font-weight:700;">${ZIEL_LABEL[z]}</div><div class="muted" style="font-size:12px;">${ZIEL_BESCHREIBUNG[z]}</div></div>
-        <div class="check ${m.ziel===z?'sel':''}">${m.ziel===z?'●':'○'}</div>
-      </button>`).join('')}
+    ${m.art === 'kraft' ? `
+      <div class="muted" style="font-size:12px; font-weight:600; margin:16px 0 8px;">Aufteilung</div>
+      ${['zweier','dreier','ganzkoerper'].map(t => `
+        <button class="typ-card ${m.typ===t?'sel':''}" data-act="neuTyp" data-arg="${t}">
+          <div class="ziel-icon ${m.typ===t?'sel':''}">${t==='zweier'?'2️⃣':t==='dreier'?'3️⃣':'🔄'}</div>
+          <div><div style="font-weight:700;">${SPLIT_LABEL[t]}</div><div class="muted" style="font-size:12px;">${SPLIT_BESCHREIBUNG[t]}</div></div>
+          <div class="check ${m.typ===t?'sel':''}">${m.typ===t?'●':'○'}</div>
+        </button>`).join('')}
+      <div class="muted" style="font-size:12px; font-weight:600; margin:16px 0 8px;">Trainingsziel</div>
+      ${KRAFT_ZIELE.map(z => `
+        <button class="ziel-card ${m.ziel===z?'sel':''}" data-act="neuZiel" data-arg="${z}">
+          <div class="ziel-icon ${m.ziel===z?'sel':''}">${ZIEL_ICON[z]}</div>
+          <div><div style="font-weight:700;">${ZIEL_LABEL[z]}</div><div class="muted" style="font-size:12px;">${ZIEL_BESCHREIBUNG[z]}</div></div>
+          <div class="check ${m.ziel===z?'sel':''}">${m.ziel===z?'●':'○'}</div>
+        </button>`).join('')}
+    ` : `
+      <div class="card" style="margin-top:16px; background:rgba(30,144,255,0.08);">
+        <div class="muted" style="font-size:13px;">Du bekommst einen Trainingstag mit passenden Übungen als Startpunkt. Eingetragen wird nur ${m.art==='yoga'?'die Haltedauer':'Dauer oder Wiederholungen'} – <b>kein Gewicht, keine Steigerung</b>. Übungen kannst du danach frei tauschen, ergänzen und umsortieren.</div>
+      </div>`}
     <button class="btn-primary" style="margin-top:18px;" data-act="neuesTrainingAnlegen">${ICONS.check} Training anlegen</button>`;
   return sheet('Neues eigenes Training', {act:'closeModal', label:'Abbrechen'}, null, body);
 }
@@ -1818,7 +1947,11 @@ function openModal(type, ctx){
   ui.trainingMenuOpen = false;
   if(type==='plangenerator') ui.modal = { type, schritt:1, typ:'dreier', vorschauPlan:null };
   else if(type==='alternativen') ui.modal = { type, uebungId: ctx.uebung };
-  else if(type==='neuesTraining') ui.modal = { type, name:'', typ:'dreier', ziel: aktiverPlan().trainingsziel || 'hypertrophie' };
+  else if(type==='neuesTraining'){
+    const z = aktiverPlan().trainingsziel;
+    ui.modal = { type, name:'', art:'kraft', typ:'dreier',
+                 ziel: KRAFT_ZIELE.includes(z) ? z : 'hypertrophie' };
+  }
   else if(type==='uebungHinzufuegen'){
     const t = gewaehlterTag();
     ui.modal = { type, tagId: t?.id, position: t ? t.uebungen.length : 0, tab:'bibliothek', filter:'',
@@ -1917,12 +2050,15 @@ function onRootClick(e){
       break;
     }
     case 'neuName': break;   // Wert wird in onRootInput uebernommen
+    case 'neuArt': ui.modal.art = arg; render(); break;
     case 'neuTyp': ui.modal.typ = arg; render(); break;
     case 'neuZiel': ui.modal.ziel = arg; render(); break;
     case 'neuesTrainingAnlegen': {
       const m = ui.modal;
-      const name = (m.name || '').trim() || `${SPLIT_LABEL[m.typ]} (eigenes)`;
-      const plan = uebernehmeNeuerPlan(generiereNeuerPlan(m.typ, m.ziel, new Set()));
+      const ziel = m.art === 'kraft' ? m.ziel : m.art;   // 'yoga'/'mobility' sind zugleich das Ziel
+      const vorgabe = m.art === 'kraft' ? `${SPLIT_LABEL[m.typ]} (eigenes)` : ZIEL_LABEL[ziel];
+      const name = (m.name || '').trim() || vorgabe;
+      const plan = uebernehmeNeuerPlan(generiereNeuerPlan(m.typ, ziel, new Set()));
       plan.id = uid();
       plan.name = name;
       plan.gespeichertAm = new Date().toISOString();
