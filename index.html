@@ -241,6 +241,24 @@
   .segmented.drei button{ font-size:12px; letter-spacing:-0.2px; }
   .segmented button.active{ background:var(--iron-input); color:#fff; }
 
+  /* ---- gefuehrtes Knie-Programm ---- */
+  .knie-info{ display:inline-flex; align-items:center; gap:6px; margin-top:12px; background:rgba(30,144,255,0.12); color:var(--iron-accent); border:none; border-radius:999px; padding:8px 14px; font-size:13px; font-weight:600; cursor:pointer; }
+  .knie-info svg{ width:15px; height:15px; }
+  .knie-erklaerung{ margin-top:12px; background:var(--iron-input); border-radius:12px; padding:12px 14px; font-size:14px; line-height:1.55; color:#E6E6EF; }
+  .knie-zeit{ font-size:54px; margin:8px 0 4px; }
+  .knie-einheit{ display:flex; align-items:center; gap:10px; width:100%; background:var(--iron-input); border:1.5px solid transparent; border-radius:12px; padding:12px 14px; margin-top:8px; color:#fff; font-size:15px; text-align:left; cursor:pointer; }
+  .knie-einheit.jetzt{ border-color:rgba(30,144,255,0.5); }
+  .knie-einheit.done{ background:rgba(48,209,88,0.12); color:var(--iron-good); }
+  .knie-box{ width:22px; height:22px; border-radius:7px; border:1.5px solid var(--iron-muted); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .knie-einheit.done .knie-box{ border-color:var(--iron-good); background:rgba(48,209,88,0.22); color:var(--iron-good); }
+  .knie-box svg{ width:14px; height:14px; }
+  .knie-ueberblick{ display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; border-radius:10px; padding:9px 6px; color:#fff; font-size:14px; text-align:left; cursor:pointer; }
+  .knie-ueberblick.aktiv{ background:rgba(30,144,255,0.12); }
+  .knie-ueberblick .nr{ width:22px; height:22px; border-radius:999px; background:var(--iron-input); color:var(--iron-muted); font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .knie-ok{ color:var(--iron-good); display:flex; flex-shrink:0; }
+  .knie-ok svg{ width:15px; height:15px; }
+  .btn-ghost:disabled{ opacity:0.35; }
+
   /* ---- modal / sheet ---- */
   .sheet-backdrop{ position:fixed; inset:0; z-index:50; background:var(--iron-bg); display:flex; flex-direction:column; }
   .sheet-header{ display:flex; align-items:center; justify-content:space-between; padding:14px 16px; padding-top:calc(14px + env(safe-area-inset-top)); background:var(--iron-card); border-bottom:1px solid var(--iron-sep); }
@@ -538,6 +556,89 @@ function planBereich(plan){
   if(plan && zielOhneGewicht(plan.trainingsziel)) return 'mobility';
   return 'gym';
 }
+/* =========================================================================
+   Geführtes Mobility-Programm „Knie & Mobility"
+   -------------------------------------------------------------------------
+   Ein festes, geführtes Programm - KEIN Plan aus der Übungsbibliothek:
+   Reihenfolge, Vorgaben und Erklärungstexte stehen hier fest und werden Übung
+   für Übung abgearbeitet. Es legt keine `Uebung`-Objekte an, verändert keinen
+   Plan und greift nicht in die Progressions-Logik ein. Ein abgeschlossener
+   Durchlauf landet ausschliesslich in `state.mobilityEintraege`.
+     art:    'halten' = Haltedauer, der Timer zählt sie herunter
+             'kraft'  = Sätze/Wiederholungen, werden abgehakt
+     seiten: 2 = links und rechts werden einzeln abgehakt
+   ========================================================================= */
+const KNIE_PROGRAMM = {
+  id: 'knie',
+  name: 'Knie & Mobility',
+  untertitel: 'Für Läufer · vorbeugend',
+  dauerHinweis: 'ca. 15 Min.',
+  uebungen: [
+    { name:'Knee-to-Wall', art:'kraft', seiten:2, saetze:1,
+      vorgabe:'10–15 Wdh. pro Seite',
+      erklaerung:'Stell dich mit einem Fuß vor eine Wand. Schiebe das Knie über die Zehen Richtung Wand, ohne dass die Ferse abhebt. Stelle den Fuß so weit von der Wand zurück, dass das Knie die Wand gerade noch berührt. Langsam und kontrolliert wiederholen. Wichtigste Übung für mehr Sprunggelenksbeweglichkeit und eine tiefere Hocke.' },
+
+    { name:'Wadendehnung Achilles', art:'halten', seiten:2, durchgaenge:2, dauer:30,
+      vorgabe:'30 Sek. pro Seite · 2 Durchgänge',
+      erklaerung:'Hände an die Wand, ein Bein nach hinten gestreckt. Die Ferse des hinteren Beins bleibt am Boden, das Knie leicht nach vorne beugen, bis es in Wade und Achillessehne zieht. Ruhig halten, nicht wippen.' },
+
+    { name:'Tibialis / Camel Stretch', art:'halten', seiten:1, durchgaenge:2, dauer:30,
+      vorgabe:'30 Sek. · 2 Durchgänge',
+      erklaerung:'In den Kniestand gehen, der Fußspann (Oberseite der Füße) liegt flach am Boden. Langsam zurücklehnen, bis es im Schienbein und Fußspann zieht. Nur so weit, wie es angenehm zieht.' },
+
+    { name:'Deep Squat Hold', art:'halten', seiten:1, durchgaenge:1, dauer:30,
+      vorgabe:'30 Sek. (steigerbar bis 2 Min.)',
+      erklaerung:'Geh so tief wie möglich in die Hocke, die Fersen bleiben am Boden. Bei Gleichgewichtsproblemen an einem Türrahmen festhalten. Mit den Ellbogen die Knie sanft nach außen drücken, die Brust bleibt aufrecht. Position halten und mit der Zeit tiefer werden.' },
+
+    { name:'Couch Stretch', art:'halten', seiten:2, durchgaenge:2, dauer:40,
+      vorgabe:'40 Sek. pro Seite · 2 Durchgänge',
+      erklaerung:'Hinteres Knie am Boden, Schienbein und Fuß an einer Wand oder Couch hochgestellt. Das vordere Bein steht als Ausfallschritt auf. Die Hüfte aufrecht halten und nach vorne schieben, bis es im Hüftbeuger und vorderen Oberschenkel zieht. Wenn es zu intensiv ist, das hintere Knie weiter von der Wand weg positionieren.' },
+
+    { name:'90/90 Hüftstretch', art:'halten', seiten:2, durchgaenge:1, dauer:30,
+      vorgabe:'30–40 Sek. pro Seite',
+      erklaerung:'Im Sitzen beide Beine im 90-Grad-Winkel anordnen: das vordere Bein liegt vor dir, das hintere seitlich. Aufrecht bleiben und leicht nach vorne über das vordere Bein lehnen. Öffnet die Hüftrotation, die man für die tiefe Hocke braucht.' },
+
+    { name:'Tibialis Raises', art:'kraft', seiten:1, saetze:3,
+      vorgabe:'3 Sätze × 15–20 Wdh.',
+      erklaerung:'Mit dem Rücken an eine Wand lehnen, die Fersen stehen etwas vor der Wand. Die Fußspitzen so weit wie möglich hochziehen und langsam wieder senken. Kräftigt die Schienbeinmuskulatur, schützt das Knie und beugt Shin Splints vor.' },
+
+    { name:'Glute Bridge', art:'kraft', seiten:1, saetze:3,
+      vorgabe:'3 Sätze × 12–15 Wdh.',
+      erklaerung:'Rückenlage, Füße aufgestellt. Die Hüfte hochdrücken, bis Schulter, Hüfte und Knie eine Linie bilden. Den Po anspannen, kurz halten, langsam senken.' },
+
+    { name:'Clamshells', art:'kraft', seiten:2, saetze:3,
+      vorgabe:'3 Sätze × 12–15 Wdh. pro Seite',
+      erklaerung:'In Seitlage, die Knie angewinkelt übereinander. Das obere Knie öffnen wie eine Muschel, die Füße bleiben zusammen, das Becken bleibt stabil. Langsam und kontrolliert.' },
+
+    { name:'ATG Split Squat', art:'kraft', seiten:2, saetze:3,
+      vorgabe:'3 Sätze × 8–10 Wdh. pro Seite',
+      erklaerung:'In Ausfallschritt-Position. Das vordere Knie langsam und kontrolliert über die Zehenspitze schieben, bis das hintere Knie fast den Boden berührt. Zum Balancieren an einem Türrahmen oder Stuhl festhalten. Anfangs flacher beginnen und über die Wochen tiefer werden. Der Oberkörper bleibt aufrecht.' },
+  ],
+};
+
+/// Die abzuhakenden Einheiten einer Übung: Sätze bzw. Durchgänge, bei
+/// seitengetrennten Übungen jeweils links und rechts einzeln.
+function knieEinheiten(u){
+  const runden      = u.art === 'halten' ? (u.durchgaenge || 1) : (u.saetze || 1);
+  const rundenLabel = u.art === 'halten' ? 'Durchgang' : 'Satz';
+  const seiten      = u.seiten === 2 ? ['Links','Rechts'] : [null];
+  const liste = [];
+  for(let r = 1; r <= runden; r++){
+    seiten.forEach(seite => {
+      const teile = [];
+      if(runden > 1) teile.push(rundenLabel + ' ' + r);
+      if(seite) teile.push(seite);
+      liste.push(teile.join(' · ') || (u.art === 'halten' ? 'Halten' : 'Satz 1'));
+    });
+  }
+  return liste;
+}
+
+/// Gesamtzahl der Einheiten des Programms (33) - Basis für die Fortschrittsanzeige.
+function knieEinheitenGesamt(){
+  return KNIE_PROGRAMM.uebungen.reduce((s,u) => s + knieEinheiten(u).length, 0);
+}
+
 const RUHIGE_ZIELE = ['yoga','mobility'];
 /// Bei Yoga und Mobility geht es ums regelmaessige Machen, nicht um Leistung:
 /// kein Gewicht, keine Gewichtssteigerung, keine automatische Progression.
@@ -880,6 +981,7 @@ const ICONS = {
   chart: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 20h2v-7H4zM10 20h2V4h-2zM16 20h2v-11h-2z"/></svg>',
   timer: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>',
   schild: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l7 3v6c0 4-3 7.5-7 9-4-1.5-7-5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>',
+  info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 11.5v5.5" stroke-linecap="round"/><path d="M12 7.6h.01" stroke-width="2.4" stroke-linecap="round"/></svg>',
 };
 
 /* =========================================================================
@@ -912,6 +1014,10 @@ function migriereState(s){
   if(!s.aktivId) s.aktivId = 'standard';
   if(s.aktivId !== 'standard' && !s.plaene.some(p => p.id === s.aktivId)) s.aktivId = 'standard';
   if(!Array.isArray(s.eintraege)) s.eintraege = [];
+  // Abgeschlossene Mobility-Programme liegen in einer EIGENEN Liste, damit die
+  // Trainings-Historie (`eintraege`) und alle Statistiken unberührt bleiben.
+  // Aeltere Sicherungen haben das Feld nicht - dann startet es einfach leer.
+  if(!Array.isArray(s.mobilityEintraege)) s.mobilityEintraege = [];
   delete s.split;
   return s;
 }
@@ -958,6 +1064,69 @@ function loadEingaben(){
   return {};
 }
 function saveEingaben(){ try{ localStorage.setItem(EINGABEN_KEY, JSON.stringify(ui.eingaben)); }catch(e){} }
+
+/* -------------------------------------------------------------------------
+   Laufzustand des geführten Knie-Programms
+   Wird gespeichert, damit ein angefangener Durchlauf einen App-Wechsel oder
+   einen Reload übersteht (iOS wirft Seiten im Hintergrund aus dem Speicher).
+   ------------------------------------------------------------------------- */
+const KNIE_KEY = 'ironlog.knie';
+function loadKnieLauf(){
+  try{
+    const raw = localStorage.getItem(KNIE_KEY);
+    if(raw){
+      const p = JSON.parse(raw);
+      if(p && typeof p === 'object') return { index: p.index|0, erledigt: p.erledigt || {}, dauer: p.dauer || {}, startZeit: p.startZeit || null, erklaerungOffen: false };
+    }
+  }catch(e){}
+  return { index:0, erledigt:{}, dauer:{}, startZeit:null, erklaerungOffen:false };
+}
+const knieLauf = loadKnieLauf();
+function saveKnieLauf(){
+  try{ localStorage.setItem(KNIE_KEY, JSON.stringify({ index:knieLauf.index, erledigt:knieLauf.erledigt, dauer:knieLauf.dauer, startZeit:knieLauf.startZeit })); }catch(e){}
+}
+function knieLaufZuruecksetzen(){
+  knieLauf.index = 0; knieLauf.erledigt = {}; knieLauf.dauer = {}; knieLauf.startZeit = null; knieLauf.erklaerungOffen = false;
+  try{ localStorage.removeItem(KNIE_KEY); }catch(e){}
+}
+function knieSchluessel(ui_, ei){ return ui_ + '-' + ei; }
+function knieErledigt(uIdx, eIdx){ return !!knieLauf.erledigt[knieSchluessel(uIdx, eIdx)]; }
+function knieHakenUm(uIdx, eIdx){
+  const k = knieSchluessel(uIdx, eIdx);
+  if(knieLauf.erledigt[k]) delete knieLauf.erledigt[k]; else knieLauf.erledigt[k] = true;
+  if(!knieLauf.startZeit) knieLauf.startZeit = Date.now();
+  saveKnieLauf();
+}
+/// Fortschritt über das gesamte Programm: wie viele Einheiten sind abgehakt?
+function knieFortschritt(){
+  let erledigt = 0;
+  KNIE_PROGRAMM.uebungen.forEach((u,i) => knieEinheiten(u).forEach((_,k) => { if(knieErledigt(i,k)) erledigt++; }));
+  return { erledigt, gesamt: knieEinheitenGesamt() };
+}
+/// Die Einheit, die als Nächstes dran ist: die erste noch nicht abgehakte.
+function knieAktuelleEinheit(uIdx){
+  const anzahl = knieEinheiten(KNIE_PROGRAMM.uebungen[uIdx]).length;
+  for(let k = 0; k < anzahl; k++){ if(!knieErledigt(uIdx, k)) return k; }
+  return null;
+}
+
+/* -------------------------------------------------------------------------
+   Vorbereitung für die geplante Streak/Flamme
+   Liefert alle Kalendertage, an denen trainiert wurde - normale Trainings UND
+   abgeschlossene Mobility-Programme zählen dabei gleichberechtigt. Die Flamme
+   auf dem Dashboard wird spaeter allein auf diesen Daten aufgebaut; hier wird
+   noch keine Streak berechnet, die Datenbasis steht aber bereits bereit.
+   ------------------------------------------------------------------------- */
+function tagesSchluessel(datum){
+  const d = new Date(datum);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function trainingsTage(){
+  const tage = new Set();
+  (state.eintraege || []).forEach(e => tage.add(tagesSchluessel(e.datum)));
+  (state.mobilityEintraege || []).forEach(e => tage.add(tagesSchluessel(e.datum)));
+  return tage;
+}
 
 // UI-Zustand (nicht persistiert)
 const ui = {
@@ -1023,6 +1192,8 @@ function renderStart(){
   return `<div class="wrap">
     <div class="logo-header">${logoMark()}</div>
     <div style="padding:0 16px 16px; display:flex; flex-direction:column; gap:16px;">
+      <!-- Vorbereitet: die Flamme wird spaeter aus trainingsTage() berechnet -
+           dort zaehlen Krafttrainings UND abgeschlossene Mobility-Programme. -->
       <div class="streak-card">
         <div style="font-size:22px;">🔥</div>
         <div>
@@ -1122,12 +1293,15 @@ function renderTrainingAuswahl(){
   karten += eigene.map(p => planAuswahlKarte(p, false)).join('');
 
   const leer = !zeigeStandard && !eigene.length;
+  // Im Mobility-Bereich steht das gefuehrte Knie-Programm oben: es ist der
+  // Haupteinstieg, die eigenen Mobility-Trainings kommen darunter.
   const inhalt =
       `<div class="muted" style="font-size:13px; margin-bottom:14px;">${BEREICH_TEXT[bereich]}</div>`
+    + (bereich === 'mobility' ? knieProgrammKarte() : '')
     + (leer
-        ? `<div class="empty-hint" style="margin-bottom:14px;">Noch kein ${BEREICH_LABEL[bereich]}-Training angelegt.</div>`
+        ? `<div class="empty-hint" style="margin-bottom:14px;">Noch kein eigenes ${BEREICH_LABEL[bereich]}-Training angelegt.</div>`
         : karten)
-    + `<button class="${leer ? 'btn-primary btn-compact' : 'btn-ghost'}" style="margin-top:4px;" data-act="openModal" data-arg="neuesTraining">+ ${BEREICH_LABEL[bereich]}-Training anlegen</button>`
+    + `<button class="${leer && bereich !== 'mobility' ? 'btn-primary btn-compact' : 'btn-ghost'}" style="margin-top:4px;" data-act="openModal" data-arg="neuesTraining">+ Eigenes ${BEREICH_LABEL[bereich]}-Training anlegen</button>`
     + `<button class="btn-ghost" style="margin-top:10px;" data-act="planSpeichern">📋 Aktuelles Training als eigenes speichern</button>`;
 
   return `<div class="wrap">
@@ -1219,17 +1393,60 @@ function renderUebungCard(uebung, idx, anzahl){
 
 /* ---------------- Historie ---------------- */
 function renderHistorie(){
-  const eintraege = state.eintraege.slice().sort((a,b) => new Date(b.datum)-new Date(a.datum));
+  // Krafttrainings und abgeschlossene Mobility-Programme stehen in EINER Liste,
+  // nach Datum gemischt. Gespeichert bleiben sie getrennt (state.eintraege bzw.
+  // state.mobilityEintraege), damit Statistiken und Progression unberührt bleiben.
+  const liste = []
+    .concat(state.eintraege.map(e => ({ typ:'training', datum:e.datum, obj:e })))
+    .concat((state.mobilityEintraege || []).map(e => ({ typ:'mobility', datum:e.datum, obj:e })))
+    .sort((a,b) => new Date(b.datum) - new Date(a.datum));
   let html = `<div class="wrap">
     <div class="top-bar"><div class="logo-header">${logoMark()}</div><hr class="sep"></div>
     <div style="padding-top:6px;">`;
-  if(!eintraege.length){
+  if(!liste.length){
     html += `<div class="empty-state"><div style="width:44px; height:44px;">${ICONS.clock}</div><div style="font-weight:700; color:#fff;">Noch keine Trainings</div><div>Schließ dein erstes Training ab, dann erscheint es hier.</div></div>`;
   } else {
-    eintraege.forEach(e => { html += renderHistCard(e); });
+    liste.forEach(x => { html += x.typ === 'mobility' ? renderMobilityHistCard(x.obj) : renderHistCard(x.obj); });
   }
   html += `</div></div>`;
   return html;
+}
+
+/// Historien-Karte eines abgeschlossenen Mobility-Programms: kein bewegtes
+/// Gewicht, sondern abgehakte Einheiten. Nur löschbar, nicht bearbeitbar - es
+/// gibt keine Werte, die man nachträglich korrigieren müsste.
+function renderMobilityHistCard(eintrag){
+  const open = ui.historieOpen.has(eintrag.id);
+  const voll = (eintrag.erledigt || 0) >= (eintrag.gesamt || 0);
+  let body = '';
+  if(open){
+    body += `<hr class="sep"><div class="hist-body">`;
+    (eintrag.uebungen || []).forEach(u => {
+      const fertig = u.erledigt >= u.gesamt;
+      body += `<div class="hist-satz-row">
+        <span style="flex:1; min-width:0; color:${fertig ? 'inherit' : 'var(--iron-muted)'};">${esc(u.name)}</span>
+        <span style="color:${fertig ? 'var(--iron-good)' : 'var(--iron-muted)'};">${u.erledigt}/${u.gesamt}</span>
+      </div>`;
+    });
+    if(eintrag.minuten) body += `<div class="hist-note">Dauer: ca. ${eintrag.minuten} ${eintrag.minuten === 1 ? 'Minute' : 'Minuten'}</div>`;
+    body += `<hr class="sep"><div class="hist-actions">
+      <button style="color:var(--iron-danger); margin-left:auto;" data-act="mobilityLoeschen" data-arg="${eintrag.id}">🗑 Löschen</button>
+    </div></div>`;
+  }
+  return `<div class="card hist-card" style="padding:0;">
+    <div class="hist-head" data-act="toggleHist" data-arg="${eintrag.id}">
+      <div class="info">
+        <div class="day-name">🦵 ${esc(eintrag.programmName || 'Mobility-Programm')}</div>
+        <div class="date">${germanDateTime(new Date(eintrag.datum))}</div>
+      </div>
+      <div class="vol">
+        <div class="kg" style="color:${voll ? 'var(--iron-good)' : 'var(--iron-accent)'};">${eintrag.erledigt}/${eintrag.gesamt}</div>
+        <div class="lbl">Einheiten</div>
+      </div>
+      <div class="muted">${open?'▲':'▼'}</div>
+    </div>
+    ${body}
+  </div>`;
 }
 function gruppenFuerEintrag(eintrag){
   const reihenfolge = [], nachName = {};
@@ -1281,6 +1498,7 @@ function renderModal(){
     case 'neuesTraining': return renderNeuesTrainingModal();
     case 'sicherung': return renderSicherungModal();
     case 'timer': return renderTimerModal();
+    case 'knie': return renderKnieModal();
   }
   return '';
 }
@@ -1619,6 +1837,252 @@ function renderNeuesTrainingModal(){
       </div>` : ''}
     <button class="btn-primary" style="margin-top:18px;" data-act="neuesTrainingAnlegen">${ICONS.check} Training anlegen</button>`;
   return sheet(`Neues ${BEREICH_LABEL[m.bereich] || ''}-Training`, {act:'closeModal', label:'Abbrechen'}, null, body);
+}
+
+/* ---- Geführtes Knie-Programm ---- */
+/// Einstiegs-Kachel im Mobility-Bereich: zeigt den Stand eines angefangenen
+/// Durchlaufs und wann das Programm zuletzt abgeschlossen wurde.
+function knieProgrammKarte(){
+  const prog = KNIE_PROGRAMM;
+  const laeufe = (state.mobilityEintraege || []).filter(e => e.programmId === prog.id);
+  const letzter = laeufe[0];
+  const fort = knieFortschritt();
+  const angefangen = fort.erledigt > 0 && fort.erledigt < fort.gesamt;
+  const zeile = angefangen
+    ? `Angefangen · ${fort.erledigt} von ${fort.gesamt} Einheiten abgehakt`
+    : (letzter ? `Zuletzt gemacht am ${germanDate(new Date(letzter.datum))} · ${laeufe.length} ${laeufe.length === 1 ? 'Durchlauf' : 'Durchläufe'}`
+               : 'Noch nicht gemacht');
+  return `<div class="plan-karte aktiv">
+    <div style="display:flex; align-items:flex-start; gap:8px;">
+      <div style="flex:1; min-width:0;">
+        <div style="font-weight:700;">🦵 ${esc(prog.name)}<span class="badge" style="margin-left:6px;">Geführt</span></div>
+        <div class="muted" style="font-size:12px; margin-top:2px;">${prog.uebungen.length} Übungen · ${prog.dauerHinweis} · ${esc(prog.untertitel)}</div>
+      </div>
+      ${angefangen ? `<button class="mini-btn danger" data-act="knieZuruecksetzen" aria-label="Stand verwerfen">↺</button>` : ''}
+    </div>
+    <div class="muted" style="font-size:12px; margin-top:8px;">${esc(zeile)}</div>
+    <div class="timer-ring" style="margin:10px 0 12px;"><div style="width:${fort.gesamt ? (fort.erledigt/fort.gesamt*100) : 0}%;"></div></div>
+    <button class="btn-primary btn-compact" data-act="knieStart">▶ ${angefangen ? 'Weitermachen' : 'Programm starten'}</button>
+  </div>`;
+}
+
+function knieStartLabel(){
+  if(knieTimer.laeuft) return '⏸ Pause';
+  return (knieTimer.gesamt > 0 && knieTimer.rest > 0 && knieTimer.rest < knieTimer.gesamt) ? '▶ Weiter' : '▶ Start';
+}
+/// Die Sekunden, die im Timer stehen: der laufende Rest, sonst die Vorgabe der Übung.
+function knieAnzeigeSekunden(uIdx){
+  if(knieTimer.uebung === uIdx && knieTimer.gesamt > 0) return knieTimer.rest;
+  return knieTimerVorgabe(uIdx);
+}
+function renderKnieModal(){
+  const prog = KNIE_PROGRAMM;
+  const anzahl = prog.uebungen.length;
+  const i = Math.max(0, Math.min(anzahl - 1, knieLauf.index));
+  const u = prog.uebungen[i];
+  const einheiten = knieEinheiten(u);
+  const aktuell = knieAktuelleEinheit(i);
+  const fort = knieFortschritt();
+  const letzte = i === anzahl - 1;
+
+  let block = '';
+  if(u.art === 'halten'){
+    const sek = knieAnzeigeSekunden(i);
+    const gesamt = (knieTimer.uebung === i && knieTimer.gesamt > 0) ? knieTimer.gesamt : sek;
+    const breite = gesamt > 0 ? (100 - (sek/gesamt)*100) : 0;
+    block = `<div class="card" style="margin-top:14px;">
+      <div class="timer-display" style="padding:4px 0 0;">
+        <div class="timer-phase" id="knieEinheit" style="color:${aktuell === null ? 'var(--iron-good)' : 'var(--iron-accent)'};">${aktuell === null ? 'Alles geschafft' : esc(einheiten[aktuell])}</div>
+        <div class="timer-time knie-zeit" id="knieZeit">${mmss(sek)}</div>
+        <div class="timer-ring"><div id="knieBar" style="width:${breite}%;"></div></div>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px; margin-top:14px;">
+        <button class="mini-btn" data-act="knieTimerAnpassen" data-delta="-10" aria-label="10 Sekunden weniger">–10</button>
+        <button class="btn-primary btn-compact" id="knieStartBtn" data-act="knieTimerStartPause" ${aktuell === null ? 'disabled' : ''}>${knieStartLabel()}</button>
+        <button class="mini-btn" data-act="knieTimerAnpassen" data-delta="10" aria-label="10 Sekunden mehr">+10</button>
+      </div>
+      <div class="muted" style="font-size:12px; margin-top:10px; text-align:center;">Wenn die Zeit um ist, meldet sich der Timer und hakt den Durchgang automatisch ab.</div>
+    </div>`;
+  }
+
+  const body = `
+    <div style="display:flex; align-items:baseline; gap:8px;">
+      <div style="font-weight:700; font-size:13px; color:var(--iron-accent);">Übung ${i+1} von ${anzahl}</div>
+      <div class="muted" style="font-size:12px; margin-left:auto;">${fort.erledigt} von ${fort.gesamt} Einheiten</div>
+    </div>
+    <div class="timer-ring" style="margin:8px 0 16px;"><div style="width:${fort.gesamt ? (fort.erledigt/fort.gesamt*100) : 0}%;"></div></div>
+
+    <div class="card">
+      <div style="font-size:19px; font-weight:800;">${esc(u.name)}</div>
+      <div class="muted" style="font-size:13px; margin-top:3px;">${esc(u.vorgabe)}</div>
+      <button class="knie-info" data-act="knieErklaerung">${ICONS.info} Erklärung${knieLauf.erklaerungOffen ? ' ausblenden' : ''}</button>
+      ${knieLauf.erklaerungOffen ? `<div class="knie-erklaerung">${esc(u.erklaerung)}</div>` : ''}
+    </div>
+
+    ${block}
+
+    <div class="card" style="margin-top:14px;">
+      <div class="section-h">${u.art === 'halten' ? 'Durchgänge abhaken' : 'Sätze abhaken'}</div>
+      ${einheiten.map((label,k) => `
+        <button class="knie-einheit ${knieErledigt(i,k) ? 'done' : ''} ${k === aktuell ? 'jetzt' : ''}" data-act="knieHaken" data-idx="${k}">
+          <span class="knie-box">${knieErledigt(i,k) ? ICONS.check : ''}</span>
+          <span style="flex:1; min-width:0;">${esc(label)}</span>
+          ${u.art === 'halten' ? `<span class="muted" style="font-size:12px;">${knieTimerVorgabe(i)} Sek.</span>` : ''}
+          ${k === aktuell ? `<span class="badge">jetzt</span>` : ''}
+        </button>`).join('')}
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+      <div class="section-h">Programm-Überblick</div>
+      ${prog.uebungen.map((x,j) => {
+        const e = knieEinheiten(x);
+        const n = e.filter((_,k) => knieErledigt(j,k)).length;
+        return `<button class="knie-ueberblick ${j === i ? 'aktiv' : ''}" data-act="knieSpringen" data-idx="${j}">
+          <span class="nr">${j+1}</span>
+          <span style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(x.name)}</span>
+          <span class="muted" style="font-size:12px;">${n}/${e.length}</span>
+          ${n === e.length ? `<span class="knie-ok">${ICONS.check}</span>` : ''}
+        </button>`;
+      }).join('')}
+    </div>
+
+    <div class="muted" style="font-size:12px; margin-top:14px; text-align:center;">Dein Stand bleibt gemerkt, auch wenn du das Fenster schließt. Erst „Programm abschließen" speichert den Durchlauf mit Datum.</div>`;
+
+  const footer = `<div style="display:flex; gap:10px;">
+      <button class="btn-ghost" style="width:auto; padding:13px 18px;" data-act="knieZurueck" ${i === 0 ? 'disabled' : ''} aria-label="Vorige Übung">‹</button>
+      ${letzte
+        ? `<button class="btn-primary btn-compact" data-act="knieAbschliessen">${ICONS.check} Programm abschließen</button>`
+        : `<button class="btn-primary btn-compact" data-act="knieWeiter">Weiter ›</button>`}
+    </div>`;
+
+  return sheet(prog.name, {act:'knieSchliessen', label:'Schließen'}, null, body, footer);
+}
+
+/* -------------------------------------------------------------------------
+   Timer des Knie-Programms
+   Bewusst getrennt vom Intervall-Timer: hier wird genau EINE Haltedauer
+   herunterzaehlt, ohne Runden und Pausen. Toene und Vibration kommen aus
+   demselben Baukasten (timerTon/timerVibriert).
+   ------------------------------------------------------------------------- */
+const knieTimer = { uebung:null, einheit:null, rest:0, gesamt:0, laeuft:false, intervalId:null };
+/// Haltedauer dieser Übung: die selbst eingestellte, sonst die vorgegebene.
+/// So gilt eine mit +10 verlängerte Dehnung für alle Durchgänge der Übung.
+function knieTimerVorgabe(uIdx){
+  const eigen = knieLauf.dauer && knieLauf.dauer[uIdx];
+  if(eigen > 0) return eigen;
+  const u = KNIE_PROGRAMM.uebungen[uIdx];
+  return (u && u.dauer) || 30;
+}
+function knieTimerStartPause(){
+  if(knieTimer.laeuft){ knieTimerPausiere(); return; }
+  const i = knieLauf.index;
+  const k = knieAktuelleEinheit(i);
+  if(k === null) return;                      // alle Durchgaenge dieser Uebung sind durch
+  if(knieTimer.uebung !== i || knieTimer.gesamt <= 0 || knieTimer.rest <= 0){
+    knieTimer.uebung = i;
+    knieTimer.gesamt = knieTimerVorgabe(i);
+    knieTimer.rest = knieTimer.gesamt;
+  }
+  knieTimer.einheit = k;
+  knieTimer.laeuft = true;
+  if(!knieLauf.startZeit){ knieLauf.startZeit = Date.now(); saveKnieLauf(); }
+  audioAufwecken();
+  timerTon('start');
+  knieTimer.intervalId = setInterval(knieTimerTick, 1000);
+  knieTimerAnzeige();
+}
+function knieTimerPausiere(){
+  knieTimer.laeuft = false;
+  if(knieTimer.intervalId){ clearInterval(knieTimer.intervalId); knieTimer.intervalId = null; }
+  knieTimerAnzeige();
+}
+function knieTimerStopp(){
+  knieTimerPausiere();
+  knieTimer.uebung = null; knieTimer.einheit = null; knieTimer.rest = 0; knieTimer.gesamt = 0;
+}
+/// Haltedauer vor oder waehrend des Laufs anpassen (z.B. 30 -> 40 Sek.).
+function knieTimerAnpassen(delta){
+  const i = knieLauf.index;
+  if(knieTimer.uebung !== i || knieTimer.gesamt <= 0){
+    knieTimer.uebung = i;
+    knieTimer.einheit = knieAktuelleEinheit(i);
+    knieTimer.gesamt = knieTimerVorgabe(i);
+    knieTimer.rest = knieTimer.gesamt;
+  }
+  // Solange der Timer noch nicht gelaufen ist, wird die Vorgabe selbst geaendert
+  // (Balken bleibt leer, Knopf sagt weiterhin „Start"). Waehrend einer Pause
+  // mitten im Halten wird dagegen nur die Restzeit verschoben.
+  const nochNichtGestartet = !knieTimer.laeuft && knieTimer.rest === knieTimer.gesamt;
+  knieTimer.rest = Math.max(5, Math.min(600, knieTimer.rest + delta));
+  if(nochNichtGestartet || knieTimer.rest > knieTimer.gesamt) knieTimer.gesamt = knieTimer.rest;
+  if(nochNichtGestartet){
+    knieLauf.dauer = knieLauf.dauer || {};
+    knieLauf.dauer[i] = knieTimer.rest;      // gilt ab jetzt für alle Durchgänge dieser Übung
+    saveKnieLauf();
+    render();
+    return;
+  }
+  knieTimerAnzeige();
+}
+function knieTimerTick(){
+  knieTimer.rest--;
+  if(knieTimer.rest > 0){
+    if(knieTimer.rest <= 3) timerTon('countdown');
+    knieTimerAnzeige();
+    return;
+  }
+  // Haltezeit ist um: Ton, Vibration, Einheit abhaken und weiterschalten.
+  knieTimer.laeuft = false;
+  if(knieTimer.intervalId){ clearInterval(knieTimer.intervalId); knieTimer.intervalId = null; }
+  knieTimer.rest = 0;
+  timerTon('fertig');
+  timerVibriert([140, 90, 140, 90, 220]);
+  const i = knieTimer.uebung, k = knieTimer.einheit;
+  if(i !== null && k !== null && !knieErledigt(i,k)) knieHakenUm(i,k);
+  knieTimer.uebung = null; knieTimer.einheit = null; knieTimer.gesamt = 0;
+  render();
+}
+/// Aktualisiert nur Zeit, Balken und Knopf - ein render() pro Sekunde wuerde
+/// die Scrollposition im Fenster stoeren.
+function knieTimerAnzeige(){
+  const zeitEl = document.getElementById('knieZeit');
+  if(!zeitEl) return;
+  zeitEl.textContent = mmss(knieTimer.rest);
+  const bar = document.getElementById('knieBar');
+  if(bar) bar.style.width = (knieTimer.gesamt > 0 ? (100 - (knieTimer.rest/knieTimer.gesamt)*100) : 0) + '%';
+  const btn = document.getElementById('knieStartBtn');
+  if(btn) btn.textContent = knieStartLabel();
+}
+
+/// Speichert den Durchlauf mit Datum in `state.mobilityEintraege`. Die normale
+/// Trainings-Historie und alle Statistiken bleiben davon unberührt.
+function knieAbschliessen(){
+  const prog = KNIE_PROGRAMM;
+  let erledigt = 0, gesamt = 0;
+  const uebungen = prog.uebungen.map((u,i) => {
+    const e = knieEinheiten(u);
+    const n = e.filter((_,k) => knieErledigt(i,k)).length;
+    erledigt += n; gesamt += e.length;
+    return { name: u.name, art: u.art, vorgabe: u.vorgabe, erledigt: n, gesamt: e.length };
+  });
+  if(erledigt === 0){
+    alert('Du hast noch keine Übung abgehakt. Hak mindestens eine Einheit ab, dann kann der Durchlauf gespeichert werden.');
+    return;
+  }
+  if(erledigt < gesamt && !confirm(`Du hast ${erledigt} von ${gesamt} Einheiten abgehakt. Durchlauf mit diesem Stand speichern? Der Eintrag erscheint dann mit dem heutigen Datum in der Historie.`)) return;
+  const minuten = knieLauf.startZeit ? Math.max(1, Math.round((Date.now() - knieLauf.startZeit)/60000)) : null;
+  state.mobilityEintraege = state.mobilityEintraege || [];
+  state.mobilityEintraege.unshift({
+    id: uid(), typ: 'mobility',
+    programmId: prog.id, programmName: prog.name,
+    datum: new Date().toISOString(),
+    erledigt, gesamt, minuten, uebungen,
+  });
+  knieTimerStopp();
+  knieLaufZuruecksetzen();
+  ui.modal = null;
+  saveState(); render();
+  toast(`${prog.name} gespeichert – ${erledigt} von ${gesamt} Einheiten`);
 }
 
 /* ---- Daten & Sicherung ---- */
@@ -1968,7 +2432,9 @@ function sicherungEinspielen(text){
     return;
   }
   const anz = Array.isArray(daten.eintraege) ? daten.eintraege.length : 0;
-  if(!confirm(`Sicherung mit ${anz} Trainings-Einträgen einspielen? ALLE Daten auf diesem Gerät werden dadurch ersetzt.`)) return;
+  const anzMob = Array.isArray(daten.mobilityEintraege) ? daten.mobilityEintraege.length : 0;
+  const mobText = anzMob ? ` und ${anzMob} Mobility-${anzMob === 1 ? 'Durchlauf' : 'Durchläufen'}` : '';
+  if(!confirm(`Sicherung mit ${anz} Trainings-Einträgen${mobText} einspielen? ALLE Daten auf diesem Gerät werden dadurch ersetzt.`)) return;
   state = migriereState(daten);
   ui.eingaben = {}; ui.trainingTagIndex = 0; ui.trainingAnsicht = 'auswahl'; ui.modal = null;
   saveState(); saveEingaben(); render();
@@ -2070,6 +2536,13 @@ function onRootClick(e){
     case 'loeschen': {
       if(confirm('Dieses Training wirklich löschen? Das kann nicht rückgängig gemacht werden.')){
         state.eintraege = state.eintraege.filter(e=>e.id!==arg); saveState(); render();
+      }
+      break;
+    }
+    case 'mobilityLoeschen': {
+      if(confirm('Diesen Mobility-Durchlauf wirklich aus der Historie löschen? Das kann nicht rückgängig gemacht werden.')){
+        state.mobilityEintraege = (state.mobilityEintraege || []).filter(e => e.id !== arg);
+        saveState(); render();
       }
       break;
     }
@@ -2180,6 +2653,52 @@ function onRootClick(e){
       ui.eingaben = {}; ui.trainingTagIndex = 0;
       saveState(); saveEingaben(); render();
       break;
+    }
+
+    /* ---- Geführtes Knie-Programm ---- */
+    case 'knieStart': {
+      ui.trainingMenuOpen = false;
+      knieLauf.erklaerungOffen = false;
+      ui.modal = { type:'knie' };
+      render(); break;
+    }
+    case 'knieErklaerung': { knieLauf.erklaerungOffen = !knieLauf.erklaerungOffen; render(); break; }
+    case 'knieHaken': {
+      knieHakenUm(knieLauf.index, parseInt(el.dataset.idx,10));
+      knieTimerStopp();
+      render(); break;
+    }
+    case 'knieWeiter': {
+      knieTimerStopp();
+      knieLauf.index = Math.min(KNIE_PROGRAMM.uebungen.length-1, knieLauf.index + 1);
+      knieLauf.erklaerungOffen = false;
+      saveKnieLauf(); render(); break;
+    }
+    case 'knieZurueck': {
+      knieTimerStopp();
+      knieLauf.index = Math.max(0, knieLauf.index - 1);
+      knieLauf.erklaerungOffen = false;
+      saveKnieLauf(); render(); break;
+    }
+    case 'knieSpringen': {
+      knieTimerStopp();
+      knieLauf.index = Math.max(0, Math.min(KNIE_PROGRAMM.uebungen.length-1, parseInt(el.dataset.idx,10) || 0));
+      knieLauf.erklaerungOffen = false;
+      saveKnieLauf(); render(); break;
+    }
+    case 'knieTimerStartPause': knieTimerStartPause(); break;
+    case 'knieTimerAnpassen': knieTimerAnpassen(parseInt(el.dataset.delta,10) || 0); break;
+    case 'knieSchliessen': {
+      knieTimerStopp();
+      const f = knieFortschritt();
+      closeModal();
+      if(f.erledigt > 0 && f.erledigt < f.gesamt) toast('Stand gemerkt – du kannst später weitermachen');
+      break;
+    }
+    case 'knieAbschliessen': knieAbschliessen(); break;
+    case 'knieZuruecksetzen': {
+      if(!confirm('Angefangenen Durchlauf verwerfen? Damit werden nur die gesetzten Haken gelöscht – bereits abgeschlossene und gespeicherte Durchläufe bleiben erhalten.')) break;
+      knieTimerStopp(); knieLaufZuruecksetzen(); render(); break;
     }
 
     /* ---- Daten & Sicherung ---- */
