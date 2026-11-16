@@ -237,7 +237,8 @@
 
   /* ---- segmented control ---- */
   .segmented{ display:flex; background:var(--iron-card); border-radius:10px; padding:3px; }
-  .segmented button{ flex:1; background:none; border:none; color:var(--iron-muted); padding:8px 4px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; }
+  .segmented button{ flex:1; min-width:0; background:none; border:none; color:var(--iron-muted); padding:8px 3px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .segmented.drei button{ font-size:12px; letter-spacing:-0.2px; }
   .segmented button.active{ background:var(--iron-input); color:#fff; }
 
   /* ---- modal / sheet ---- */
@@ -414,6 +415,31 @@ const BIBLIOTHEK = [
   u("Face Pulls (Kabel)","schultern",3,15,20,20,2.5,false),
   u("Upright Row (Langhantel)","schultern",3,10,15,30,2.5,false),
 
+  // ── Calisthenics (Koerpergewicht) ──────────────────────────────────
+  u("Liegestütze","brustHorizontal",3,8,20,0,0,true),
+  u("Archer-Liegestütze","brustHorizontal",3,5,12,0,0,true),
+  u("Erhöhte Liegestütze (Füße hoch)","brustSchraeg",3,8,15,0,0,true),
+  u("Pseudo-Planche-Liegestütze","brustSchraeg",3,5,12,0,0,true),
+  u("Sliding Fly (Handtuch)","brustIsolation",3,6,12,0,0,false),
+  u("Diamant-Liegestütze","trizeps",3,6,15,0,0,true),
+  u("Bank-Dips","trizeps",3,8,15,0,0,false),
+  u("Australian Pull-ups (Low Row)","rueckenHorizontal",3,8,15,0,0,true),
+  u("Handtuch-Rudern an der Tür","rueckenHorizontal",3,8,15,0,0,true),
+  u("Klimmzüge schmal (Untergriff)","bizeps",3,5,12,0,0,false),
+  u("Australian Curl (Untergriff)","bizeps",3,8,15,0,0,false),
+  u("Pistol Squat (assistiert)","quadrizeps",3,5,10,0,0,true),
+  u("Bulgarische Split-Kniebeugen (Körpergewicht)","quadrizeps",3,8,15,0,0,true),
+  u("Sprungkniebeugen","quadrizeps",3,8,15,0,0,true),
+  u("Wandsitzen","quadrizeps",3,30,90,0,0,false,'kraft','sekunden'),
+  u("Glute Bridge","hintereKette",3,10,20,0,0,false),
+  u("Einbeiniger Hip Thrust","hintereKette",3,8,15,0,0,false),
+  u("Pike-Liegestütze","schultern",3,6,15,0,0,true),
+  u("Handstand-Liegestütze (Wand)","schultern",3,3,10,0,0,true),
+  u("Handstand halten (Wand)","schultern",3,20,60,0,0,true,'kraft','sekunden'),
+  u("Wadenheben auf Stufe","waden",3,12,25,0,0,false),
+  u("Hollow Body Hold","bauch",3,20,60,0,0,false,'kraft','sekunden'),
+  u("L-Sit","bauch",3,10,40,0,0,false,'kraft','sekunden'),
+
   // ── Yoga ───────────────────────────────────────────────────────────
   r("Sonnengruß","yogaFlow",3,30,90,'yoga','sekunden'),
   r("Katze-Kuh","yogaFlow",2,30,60,'yoga','sekunden'),
@@ -491,6 +517,27 @@ const ZIEL_LABEL = { hypertrophie:"Hypertrophie", maximalkraft:"Maximalkraft", k
                      yoga:"Yoga", mobility:"Mobility" };
 const ZIEL_ICON  = { hypertrophie:'💪', maximalkraft:'⚡', kraftausdauer:'🏃', yoga:'🧘', mobility:'🤸' };
 const KRAFT_ZIELE = ['hypertrophie','maximalkraft','kraftausdauer'];
+const BEREICHE = ['gym','calisthenics','mobility'];
+const BEREICH_LABEL = { gym:'Gym', calisthenics:'Calisthenics', mobility:'Mobility' };
+const BEREICH_ICON  = { gym:'🏋️', calisthenics:'🤸', mobility:'🧘' };
+const BEREICH_TEXT  = {
+  gym:          'Training an Geräten und mit Gewichten. Gewicht und Wiederholungen werden automatisch gesteigert.',
+  calisthenics: 'Training mit dem eigenen Körpergewicht. Gesteigert wird über Wiederholungen und Haltezeit statt über Gewicht.',
+  mobility:     'Yoga und Beweglichkeit. Ohne Gewicht und ohne Steigerung – hier zählt, dass du es regelmäßig machst.',
+};
+/// Zu welchem Bereich eine Uebung gehoert. Koerpergewichts-Uebungen (kg 0) sind
+/// Calisthenics, alles mit Gewicht ist Gym, Yoga/Mobility stehen fuer sich.
+function uebungsBereich(v){
+  if(v.kategorie === 'yoga' || v.kategorie === 'mobility') return 'mobility';
+  return v.kg > 0 ? 'gym' : 'calisthenics';
+}
+/// Bereich eines Trainings - mit Rueckfallebene, damit aeltere Plaene ohne das
+/// Feld nie ins Leere laufen.
+function planBereich(plan){
+  if(plan && BEREICHE.includes(plan.bereich)) return plan.bereich;
+  if(plan && zielOhneGewicht(plan.trainingsziel)) return 'mobility';
+  return 'gym';
+}
 const RUHIGE_ZIELE = ['yoga','mobility'];
 /// Bei Yoga und Mobility geht es ums regelmaessige Machen, nicht um Leistung:
 /// kein Gewicht, keine Gewichtssteigerung, keine automatische Progression.
@@ -598,6 +645,14 @@ function berechneProgression(zielGewicht, sollSaetze, gewichtsSteigerung, wMin, 
   if(zielWdh < wMax){
     return { neuesGewicht: zielGewicht, neueZielWiederholungen: Math.min(zielWdh + schritt, wMax), status:'wiederholungenRauf' };
   }
+  // Am oberen Ende des Bereichs wird normalerweise das Gewicht erhoeht und die
+  // Wiederholungen gehen zurueck auf das Minimum. Bei reinen Koerpergewichts-Uebungen
+  // gibt es aber nichts draufzulegen - ein Zuruecksetzen waere dort ein Rueckschritt.
+  // Stattdessen waechst der Wiederholungs-/Sekundenbereich einfach mit.
+  if(gewichtsSteigerung <= 0){
+    const hoeher = zielWdh + schritt;
+    return { neuesGewicht: zielGewicht, neueZielWiederholungen: hoeher, neuesMax: hoeher, status:'wiederholungenRauf' };
+  }
   return { neuesGewicht: zielGewicht + gewichtsSteigerung, neueZielWiederholungen: wMin, status:'gewichtRauf' };
 }
 
@@ -625,11 +680,15 @@ function generiereRuhigenPlan(ziel){
   return { typ:'ganzkoerper', ziel, tage:[{ name: ZIEL_LABEL[ziel], reihenfolge:1, uebungen: auswahl }] };
 }
 
-function generiereNeuerPlan(typ, ziel, aktuelleUebungsNamen){
+function generiereNeuerPlan(typ, ziel, aktuelleUebungsNamen, bereich){
   if(zielOhneGewicht(ziel)) return generiereRuhigenPlan(ziel);
   const gepickt = new Set(aktuelleUebungsNamen);
   function waehle(gruppe){
-    const kandidaten = BIBLIOTHEK.filter(v => v.gruppe === gruppe);
+    const gruppenPool = BIBLIOTHEK.filter(v => v.gruppe === gruppe);
+    // Nur Uebungen des gewaehlten Bereichs; gibt es fuer eine Muskelgruppe keine,
+    // wird auf die ganze Gruppe zurueckgefallen, damit nie eine Luecke entsteht.
+    const imBereich = bereich ? gruppenPool.filter(v => uebungsBereich(v) === bereich) : gruppenPool;
+    const kandidaten = imBereich.length ? imBereich : gruppenPool;
     const frisch = kandidaten.filter(v => !gepickt.has(v.name));
     const pool = frisch.length ? frisch : kandidaten;
     const neu = pool[Math.floor(Math.random() * pool.length)];
@@ -659,8 +718,9 @@ function generiereNeuerPlan(typ, ziel, aktuelleUebungsNamen){
   }
   return { typ, ziel, tage };
 }
-function uebernehmeNeuerPlan(plan){
-  const split = { id: uid(), typ: plan.typ, zyklusStart: new Date().toISOString(), zyklusWochen: 6, trainingsziel: plan.ziel, tage: [] };
+function uebernehmeNeuerPlan(plan, bereich){
+  const split = { id: uid(), typ: plan.typ, zyklusStart: new Date().toISOString(), zyklusWochen: 6,
+                  trainingsziel: plan.ziel, bereich: bereich || (zielOhneGewicht(plan.ziel) ? 'mobility' : 'gym'), tage: [] };
   plan.tage.forEach((tagInfo, ti) => {
     const tagObj = { id: uid(), name: tagInfo.name, reihenfolge: tagInfo.reihenfolge, uebungen: [] };
     tagInfo.uebungen.forEach((vorlage, i) => tagObj.uebungen.push(erzeugeUebung(vorlage, plan.ziel, i)));
@@ -845,6 +905,10 @@ function migriereState(s){
   s.plaene = s.plaene.map(p => p && p.split
     ? Object.assign({}, p.split, { id: p.id, name: p.name, gespeichertAm: p.gespeichertAm })
     : p).filter(Boolean);
+  // Bereich nachruesten: der mitgelieferte Plan ist ein Gym-Training, eigene Plaene
+  // richten sich nach ihrem Ziel (Yoga/Mobility -> Mobility, sonst Gym).
+  if(!BEREICHE.includes(s.standard.bereich)) s.standard.bereich = 'gym';
+  s.plaene.forEach(p => { if(!BEREICHE.includes(p.bereich)) p.bereich = planBereich(p); });
   if(!s.aktivId) s.aktivId = 'standard';
   if(s.aktivId !== 'standard' && !s.plaene.some(p => p.id === s.aktivId)) s.aktivId = 'standard';
   if(!Array.isArray(s.eintraege)) s.eintraege = [];
@@ -899,7 +963,7 @@ function saveEingaben(){ try{ localStorage.setItem(EINGABEN_KEY, JSON.stringify(
 const ui = {
   tab: 'start',
   trainingAnsicht: 'auswahl',   // 'auswahl' = Trainingswahl, 'log' = Eintragen
-  trainingArt: 'standard',      // 'standard' = IronLog-Training, 'eigene' = eigene Trainings
+  trainingArt: 'gym',           // Bereich im Training-Menü: 'gym' | 'calisthenics' | 'mobility'
   trainingTagIndex: 0,
   eingaben: loadEingaben(), // uebungId -> {saetze:[{gewicht,wiederholungen}], notiz} - persistiert
   trainingMenuOpen: false,
@@ -1027,7 +1091,7 @@ function planAuswahlKarte(plan, istStandard){
     <div style="display:flex; align-items:flex-start; gap:8px;">
       <div style="flex:1; min-width:0;">
         <div style="font-weight:700;">${esc(plan.name || 'Training')}${istAktiv ? '<span class="aktiv-badge">AKTIV</span>' : ''}</div>
-        <div class="muted" style="font-size:12px; margin-top:2px;">${SPLIT_LABEL[plan.typ] || 'Plan'} · ${ZIEL_ICON[plan.trainingsziel] || ''} ${ZIEL_LABEL[plan.trainingsziel] || ''} · ${uebungen} Übungen</div>
+        <div class="muted" style="font-size:12px; margin-top:2px;">${zielOhneGewicht(plan.trainingsziel) ? '' : (SPLIT_LABEL[plan.typ] || 'Plan') + ' · '}${ZIEL_ICON[plan.trainingsziel] || ''} ${ZIEL_LABEL[plan.trainingsziel] || ''} · ${uebungen} Übungen</div>
       </div>
       ${istStandard ? '' : `<button class="mini-btn" data-act="planUmbenennen" data-plan="${plan.id}" aria-label="Umbenennen">✏️</button>
       <button class="mini-btn danger" data-act="planLoeschen" data-plan="${plan.id}" aria-label="Löschen">🗑</button>`}
@@ -1046,26 +1110,31 @@ function planAuswahlKarte(plan, istStandard){
   </div>`;
 }
 
-/// Untermenü beim Tippen auf „Training": IronLog-Training oder eigene Trainings.
+/// Untermenü beim Tippen auf „Training": Gym, Calisthenics oder Mobility.
+/// Jedes Training gehört genau einem Bereich an; der mitgelieferte Plan steht unter Gym.
 function renderTrainingAuswahl(){
-  const eigene = state.plaene || [];
-  let inhalt;
-  if(ui.trainingArt === 'standard'){
-    inhalt = `<div class="muted" style="font-size:13px; margin-bottom:12px;">Der mitgelieferte Plan mit sinnvoll aufgebauten Trainingstagen. Wähl einen Tag, um loszulegen.</div>`
-           + planAuswahlKarte(state.standard, true);
-  } else {
-    inhalt = `<div class="muted" style="font-size:13px; margin-bottom:12px;">Eigene Trainings starten als fertige Vorlage, die du frei anpassen kannst – Übungen, Reihenfolge, Ziel. Progression und Statistik laufen ganz normal weiter.</div>`
-           + (eigene.length ? eigene.map(p => planAuswahlKarte(p, false)).join('')
-                            : `<div class="empty-hint">Noch keine eigenen Trainings.</div>`)
-           + `<button class="btn-ghost" style="margin-top:4px;" data-act="openModal" data-arg="neuesTraining">+ Neues eigenes Training</button>`
-           + `<button class="btn-ghost" style="margin-top:10px;" data-act="planSpeichern">📋 Aktuelles Training als eigenes speichern</button>`;
-  }
+  const bereich = BEREICHE.includes(ui.trainingArt) ? ui.trainingArt : 'gym';
+  const eigene = (state.plaene || []).filter(p => planBereich(p) === bereich);
+  const zeigeStandard = bereich === planBereich(state.standard);
+
+  let karten = '';
+  if(zeigeStandard) karten += planAuswahlKarte(state.standard, true);
+  karten += eigene.map(p => planAuswahlKarte(p, false)).join('');
+
+  const leer = !zeigeStandard && !eigene.length;
+  const inhalt =
+      `<div class="muted" style="font-size:13px; margin-bottom:14px;">${BEREICH_TEXT[bereich]}</div>`
+    + (leer
+        ? `<div class="empty-hint" style="margin-bottom:14px;">Noch kein ${BEREICH_LABEL[bereich]}-Training angelegt.</div>`
+        : karten)
+    + `<button class="${leer ? 'btn-primary btn-compact' : 'btn-ghost'}" style="margin-top:4px;" data-act="openModal" data-arg="neuesTraining">+ ${BEREICH_LABEL[bereich]}-Training anlegen</button>`
+    + `<button class="btn-ghost" style="margin-top:10px;" data-act="planSpeichern">📋 Aktuelles Training als eigenes speichern</button>`;
+
   return `<div class="wrap">
     <div class="top-bar">${trainingKopf()}<hr class="sep"></div>
     <div style="padding:14px 16px 0;">
-      <div class="segmented">
-        <button class="${ui.trainingArt==='standard'?'active':''}" data-act="trainingArt" data-arg="standard">IronLog-Training</button>
-        <button class="${ui.trainingArt==='eigene'?'active':''}" data-act="trainingArt" data-arg="eigene">Eigene Trainings</button>
+      <div class="segmented drei">
+        ${BEREICHE.map(b => `<button class="${bereich===b?'active':''}" data-act="trainingArt" data-arg="${b}">${BEREICH_ICON[b]} ${BEREICH_LABEL[b]}</button>`).join('')}
       </div>
     </div>
     <div style="padding:16px 16px 24px;">${inhalt}</div>
@@ -1515,16 +1584,17 @@ function renderNeuesTrainingModal(){
       <span class="lbl" style="min-width:60px;">Name</span>
       <input type="text" style="flex:1; min-width:0;" value="${esc(m.name)}" data-act="neuName" placeholder="z.B. Zuhause">
     </div>
-    <div class="muted" style="font-size:12px; font-weight:600; margin-bottom:8px;">Art des Trainings</div>
-    ${[['kraft','🏋️','Krafttraining','Mit Gewicht · automatische Steigerung'],
-       ['yoga', ZIEL_ICON.yoga, 'Yoga', ZIEL_BESCHREIBUNG.yoga],
-       ['mobility', ZIEL_ICON.mobility, 'Mobility', ZIEL_BESCHREIBUNG.mobility]].map(([a,ic,titel,text]) => `
-      <button class="ziel-card ${m.art===a?'sel':''}" data-act="neuArt" data-arg="${a}">
-        <div class="ziel-icon ${m.art===a?'sel':''}">${ic}</div>
-        <div><div style="font-weight:700;">${titel}</div><div class="muted" style="font-size:12px;">${text}</div></div>
-        <div class="check ${m.art===a?'sel':''}">${m.art===a?'●':'○'}</div>
-      </button>`).join('')}
-    ${m.art === 'kraft' ? `
+    ${m.bereich === 'mobility' ? `
+      <div class="muted" style="font-size:12px; font-weight:600; margin-bottom:8px;">Art des Trainings</div>
+      ${[['yoga', ZIEL_ICON.yoga, 'Yoga', ZIEL_BESCHREIBUNG.yoga],
+         ['mobility', ZIEL_ICON.mobility, 'Beweglichkeit', ZIEL_BESCHREIBUNG.mobility]].map(([a,ic,titel,text]) => `
+        <button class="ziel-card ${m.art===a?'sel':''}" data-act="neuArt" data-arg="${a}">
+          <div class="ziel-icon ${m.art===a?'sel':''}">${ic}</div>
+          <div><div style="font-weight:700;">${titel}</div><div class="muted" style="font-size:12px;">${text}</div></div>
+          <div class="check ${m.art===a?'sel':''}">${m.art===a?'●':'○'}</div>
+        </button>`).join('')}
+    ` : ''}
+    ${m.bereich !== 'mobility' ? `
       <div class="muted" style="font-size:12px; font-weight:600; margin:16px 0 8px;">Aufteilung</div>
       ${['zweier','dreier','ganzkoerper'].map(t => `
         <button class="typ-card ${m.typ===t?'sel':''}" data-act="neuTyp" data-arg="${t}">
@@ -1543,8 +1613,12 @@ function renderNeuesTrainingModal(){
       <div class="card" style="margin-top:16px; background:rgba(30,144,255,0.08);">
         <div class="muted" style="font-size:13px;">Du bekommst einen Trainingstag mit passenden Übungen als Startpunkt. Eingetragen wird nur ${m.art==='yoga'?'die Haltedauer':'Dauer oder Wiederholungen'} – <b>kein Gewicht, keine Steigerung</b>. Übungen kannst du danach frei tauschen, ergänzen und umsortieren.</div>
       </div>`}
+    ${m.bereich === 'calisthenics' ? `
+      <div class="card" style="margin-top:16px; background:rgba(30,144,255,0.08);">
+        <div class="muted" style="font-size:13px;">Es werden nur Übungen mit dem eigenen Körpergewicht verwendet. Gesteigert wird über <b>Wiederholungen und Haltezeit</b> – der Zielbereich wächst mit, sobald du ihn ausreizt.</div>
+      </div>` : ''}
     <button class="btn-primary" style="margin-top:18px;" data-act="neuesTrainingAnlegen">${ICONS.check} Training anlegen</button>`;
-  return sheet('Neues eigenes Training', {act:'closeModal', label:'Abbrechen'}, null, body);
+  return sheet(`Neues ${BEREICH_LABEL[m.bereich] || ''}-Training`, {act:'closeModal', label:'Abbrechen'}, null, body);
 }
 
 /* ---- Daten & Sicherung ---- */
@@ -1948,8 +2022,11 @@ function openModal(type, ctx){
   if(type==='plangenerator') ui.modal = { type, schritt:1, typ:'dreier', vorschauPlan:null };
   else if(type==='alternativen') ui.modal = { type, uebungId: ctx.uebung };
   else if(type==='neuesTraining'){
+    const bereich = BEREICHE.includes(ui.trainingArt) ? ui.trainingArt : 'gym';
     const z = aktiverPlan().trainingsziel;
-    ui.modal = { type, name:'', art:'kraft', typ:'dreier',
+    ui.modal = { type, name:'', bereich,
+                 art: bereich === 'mobility' ? 'mobility' : 'kraft',
+                 typ: bereich === 'calisthenics' ? 'ganzkoerper' : 'dreier',
                  ziel: KRAFT_ZIELE.includes(z) ? z : 'hypertrophie' };
   }
   else if(type==='uebungHinzufuegen'){
@@ -2055,17 +2132,18 @@ function onRootClick(e){
     case 'neuZiel': ui.modal.ziel = arg; render(); break;
     case 'neuesTrainingAnlegen': {
       const m = ui.modal;
-      const ziel = m.art === 'kraft' ? m.ziel : m.art;   // 'yoga'/'mobility' sind zugleich das Ziel
-      const vorgabe = m.art === 'kraft' ? `${SPLIT_LABEL[m.typ]} (eigenes)` : ZIEL_LABEL[ziel];
+      const bereich = m.bereich || 'gym';
+      const ziel = bereich === 'mobility' ? m.art : m.ziel;   // bei Mobility ist die Art zugleich das Ziel
+      const vorgabe = bereich === 'mobility' ? ZIEL_LABEL[ziel] : `${BEREICH_LABEL[bereich]} ${SPLIT_LABEL[m.typ]}`;
       const name = (m.name || '').trim() || vorgabe;
-      const plan = uebernehmeNeuerPlan(generiereNeuerPlan(m.typ, ziel, new Set()));
+      const plan = uebernehmeNeuerPlan(generiereNeuerPlan(m.typ, ziel, new Set(), bereich), bereich);
       plan.id = uid();
       plan.name = name;
       plan.gespeichertAm = new Date().toISOString();
       state.plaene = state.plaene || [];
       state.plaene.unshift(plan);
       aktivierePlan(plan.id);
-      ui.modal = null; ui.trainingArt = 'eigene'; ui.trainingAnsicht = 'auswahl';
+      ui.modal = null; ui.trainingArt = bereich; ui.trainingAnsicht = 'auswahl';
       saveState(); render();
       break;
     }
@@ -2081,7 +2159,7 @@ function onRootClick(e){
         kopie.gespeichertAm = new Date().toISOString();
         state.plaene = state.plaene || [];
         state.plaene.unshift(kopie);
-        ui.trainingArt = 'eigene';
+        ui.trainingArt = planBereich(kopie);
         saveState(); render();
       }
       break;
@@ -2237,7 +2315,12 @@ function bestaetigeAbschluss(){
     if(z.notizText) eintrag.notizen.push({ uebungsName: z.uebungName, text: z.notizText });
     eintrag.fortschritt.push({ uebungsName: z.uebungName, status: z.ergebnis.status });
     const uebung = aktiverPlan().tage.flatMap(t=>t.uebungen).find(u=>u.id===z.uebungId);
-    if(uebung){ uebung.gewicht = z.ergebnis.neuesGewicht; uebung.zielWiederholungen = z.ergebnis.neueZielWiederholungen; delete ui.eingaben[uebung.id]; }
+    if(uebung){
+      uebung.gewicht = z.ergebnis.neuesGewicht;
+      uebung.zielWiederholungen = z.ergebnis.neueZielWiederholungen;
+      if(z.ergebnis.neuesMax) uebung.wiederholungsMax = z.ergebnis.neuesMax;   // Koerpergewicht: Bereich waechst mit
+      delete ui.eingaben[uebung.id];
+    }
     zeilenErgebnis.push({ uebungName: z.uebungName, einheit: z.einheit, ergebnis: z.ergebnis, geleisteteSaetze: z.ausgefuellteSaetze });
   });
   state.eintraege.push(eintrag);
