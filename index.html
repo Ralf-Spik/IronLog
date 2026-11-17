@@ -242,21 +242,27 @@
   .segmented button.active{ background:var(--iron-input); color:#fff; }
 
   /* ---- gefuehrtes Knie-Programm ---- */
-  .knie-info{ display:inline-flex; align-items:center; gap:6px; margin-top:12px; background:rgba(30,144,255,0.12); color:var(--iron-accent); border:none; border-radius:999px; padding:8px 14px; font-size:13px; font-weight:600; cursor:pointer; }
-  .knie-info svg{ width:15px; height:15px; }
-  .knie-erklaerung{ margin-top:12px; background:var(--iron-input); border-radius:12px; padding:12px 14px; font-size:14px; line-height:1.55; color:#E6E6EF; }
-  .knie-zeit{ font-size:54px; margin:8px 0 4px; }
-  .knie-einheit{ display:flex; align-items:center; gap:10px; width:100%; background:var(--iron-input); border:1.5px solid transparent; border-radius:12px; padding:12px 14px; margin-top:8px; color:#fff; font-size:15px; text-align:left; cursor:pointer; }
-  .knie-einheit.jetzt{ border-color:rgba(30,144,255,0.5); }
-  .knie-einheit.done{ background:rgba(48,209,88,0.12); color:var(--iron-good); }
-  .knie-box{ width:22px; height:22px; border-radius:7px; border:1.5px solid var(--iron-muted); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .knie-einheit.done .knie-box{ border-color:var(--iron-good); background:rgba(48,209,88,0.22); color:var(--iron-good); }
-  .knie-box svg{ width:14px; height:14px; }
-  .knie-ueberblick{ display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; border-radius:10px; padding:9px 6px; color:#fff; font-size:14px; text-align:left; cursor:pointer; }
-  .knie-ueberblick.aktiv{ background:rgba(30,144,255,0.12); }
-  .knie-ueberblick .nr{ width:22px; height:22px; border-radius:999px; background:var(--iron-input); color:var(--iron-muted); font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .knie-ok{ color:var(--iron-good); display:flex; flex-shrink:0; }
-  .knie-ok svg{ width:15px; height:15px; }
+  .prog-info{ display:inline-flex; align-items:center; gap:6px; margin-top:12px; background:rgba(30,144,255,0.12); color:var(--iron-accent); border:none; border-radius:999px; padding:8px 14px; font-size:13px; font-weight:600; cursor:pointer; }
+  .prog-info svg{ width:15px; height:15px; }
+  .prog-erklaerung{ margin-top:12px; background:var(--iron-input); border-radius:12px; padding:12px 14px; font-size:14px; line-height:1.55; color:#E6E6EF; }
+  .prog-zeit{ font-size:54px; margin:8px 0 4px; }
+  .prog-einheit{ display:flex; align-items:center; gap:10px; width:100%; background:var(--iron-input); border:1.5px solid transparent; border-radius:12px; padding:12px 14px; margin-top:8px; color:#fff; font-size:15px; text-align:left; cursor:pointer; }
+  .prog-einheit.jetzt{ border-color:rgba(30,144,255,0.5); }
+  .prog-einheit.done{ background:rgba(48,209,88,0.12); color:var(--iron-good); }
+  .prog-box{ width:22px; height:22px; border-radius:7px; border:1.5px solid var(--iron-muted); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .prog-einheit.done .prog-box{ border-color:var(--iron-good); background:rgba(48,209,88,0.22); color:var(--iron-good); }
+  .prog-box svg{ width:14px; height:14px; }
+  .prog-ueberblick{ display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; border-radius:10px; padding:9px 6px; color:#fff; font-size:14px; text-align:left; cursor:pointer; }
+  .prog-ueberblick.aktiv{ background:rgba(30,144,255,0.12); }
+  .prog-ueberblick .nr{ width:22px; height:22px; border-radius:999px; background:var(--iron-input); color:var(--iron-muted); font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .prog-ok{ color:var(--iron-good); display:flex; flex-shrink:0; }
+  .prog-ok svg{ width:15px; height:15px; }
+  .prog-zweck{ font-size:12px; color:var(--iron-accent); margin-top:4px; }
+  .stufen-zeile{ display:flex; align-items:center; gap:10px; margin-top:12px; background:var(--iron-input); border-radius:12px; padding:8px 10px; }
+  .stufen-zeile .mini-btn{ background:rgba(30,144,255,0.15); color:var(--iron-accent); font-size:17px; }
+  .stufe-weiter{ margin-top:10px; font-size:12px; line-height:1.5; color:var(--iron-good); background:rgba(48,209,88,0.1); border-radius:10px; padding:9px 11px; }
+  .prog-achte{ margin-top:10px; font-size:14px; line-height:1.55; color:#E6E6EF; background:rgba(255,159,10,0.1); border-radius:10px; padding:10px 12px; }
+  .prog-hinweis{ font-size:13px; line-height:1.55; color:var(--iron-muted); background:rgba(30,144,255,0.08); border-radius:12px; padding:12px 14px; margin-bottom:14px; }
   .btn-ghost:disabled{ opacity:0.35; }
 
   /* ---- modal / sheet ---- */
@@ -563,7 +569,7 @@ function planBereich(plan){
    Reihenfolge, Vorgaben und Erklärungstexte stehen hier fest und werden Übung
    für Übung abgearbeitet. Es legt keine `Uebung`-Objekte an, verändert keinen
    Plan und greift nicht in die Progressions-Logik ein. Ein abgeschlossener
-   Durchlauf landet ausschliesslich in `state.mobilityEintraege`.
+   Durchlauf landet ausschliesslich in `state.programmEintraege`.
      art:    'halten' = Haltedauer, der Timer zählt sie herunter
              'kraft'  = Sätze/Wiederholungen, werden abgehakt
      seiten: 2 = links und rechts werden einzeln abgehakt
@@ -573,6 +579,8 @@ const KNIE_PROGRAMM = {
   name: 'Knie & Mobility',
   untertitel: 'Für Läufer · vorbeugend',
   dauerHinweis: 'ca. 15 Min.',
+  bereich: 'mobility',
+  icon: '🦵',
   uebungen: [
     { name:'Knee-to-Wall', art:'kraft', seiten:2, saetze:1,
       vorgabe:'10–15 Wdh. pro Seite',
@@ -616,27 +624,266 @@ const KNIE_PROGRAMM = {
   ],
 };
 
-/// Die abzuhakenden Einheiten einer Übung: Sätze bzw. Durchgänge, bei
-/// seitengetrennten Übungen jeweils links und rechts einzeln.
-function knieEinheiten(u){
-  const runden      = u.art === 'halten' ? (u.durchgaenge || 1) : (u.saetze || 1);
-  const rundenLabel = u.art === 'halten' ? 'Durchgang' : 'Satz';
-  const seiten      = u.seiten === 2 ? ['Links','Rechts'] : [null];
+/* =========================================================================
+   Geführtes Calisthenics-Programm „L-Sit & Handstand"
+   -------------------------------------------------------------------------
+   Skill-Training mit Stufen. Jede Übung hat mehrere Schwierigkeitsstufen;
+   trainiert wird immer die eingestellte, und `weiter` sagt, woran man merkt,
+   dass die nächste dran ist. Die Reihenfolge ist bewusst so gewählt:
+   Handgelenke zuerst, dann das Können (Handstand, L-Sit) solange man frisch
+   ist, danach die Kraft- und Kompressionsarbeit, zum Schluss das Dehnen.
+   Fernziel: aus dem L-Sit mit gestreckten Armen in den Handstand drücken
+   (Press). Dafür braucht es drei Dinge, die hier getrennt trainiert werden:
+   Handstand-Balance, L-Sit-Kraft und Kompression (Beine zum Körper ziehen).
+   ========================================================================= */
+const SKILL_PROGRAMM = {
+  id: 'skill',
+  name: 'L-Sit & Handstand',
+  untertitel: 'Skill-Training mit Stufen',
+  dauerHinweis: 'ca. 25 Min.',
+  bereich: 'calisthenics',
+  icon: '🤸',
+  hinweis: 'Trainier das 2 bis 3 Mal pro Woche an Tagen, an denen du frisch bist – Können lernt man ausgeruht, nicht erschöpft. Jede Übung hat Stufen: Stell oben die Stufe ein, die du sauber schaffst, und bleib dort, bis die Bedingung für die nächste erfüllt ist. Lieber drei Wochen zu lange auf einer Stufe als eine Woche zu früh auf der nächsten – zu früh wechseln ist der häufigste Grund, warum der Handstand nie krumm wird und der L-Sit nie hoch kommt. Du brauchst eine freie Wand und am besten Parallettes; zwei stabile Stühle oder Yogablöcke tun es auch.',
+  uebungen: [
+
+    /* ---------------------------------------------------------------- 1 */
+    { name: 'Handgelenke & Schultern vorbereiten',
+      art:'halten', seiten:1, durchgaenge:2, dauer:60,
+      vorgabe:'2 Durchgänge à 60 Sek.',
+      erklaerung:'Geh in den Vierfüßlerstand. Erst die Handflächen flach auf den Boden, Finger nach vorn: verlagere das Gewicht langsam nach vorn und zurück, bis es im Unterarm zieht. Dann die Finger zu den Knien drehen und wieder langsam vor und zurück schaukeln. Danach die Handrücken auf den Boden legen, Finger zeigen zu dir, und vorsichtig Gewicht aufnehmen. Zum Schluss im Vierfüßlerstand zehnmal die Schultern weit nach oben schieben und wieder sinken lassen, dann ein paar große Schulterkreise im Stehen.',
+      achte:'Niemals in den Schmerz hinein, nur bis es deutlich zieht. Handstand und L-Sit laden dein ganzes Gewicht auf die Handgelenke ab – das ist der Teil, den fast jeder überspringt und sich damit eine monatelange Zwangspause einhandelt. Diese zwei Minuten sind keine Zeitverschwendung.' },
+
+    /* ---------------------------------------------------------------- 2 */
+    { name: 'Hollow Body Hold',
+      zweck:'Die Grundspannung, von der Handstand und L-Sit beide leben.',
+      stufen: [
+        { name:'Angewinkelt (Tuck)', art:'halten', durchgaenge:3, dauer:20,
+          vorgabe:'3 Durchgänge à 20 Sek.',
+          erklaerung:'Rückenlage. Drück den unteren Rücken fest in den Boden, als wolltest du den Boden eindrücken. Zieh die Knie angewinkelt an, löse die Schulterblätter vom Boden und halte die Arme neben den Knien. Diese Position halten und dabei ruhig weiteratmen.',
+          achte:'Der untere Rücken muss durchgehend Kontakt zum Boden haben. Sobald ein Spalt entsteht, ist die Spannung weg – dann lieber abbrechen als weiterzittern.',
+          weiter:'du 3 × 30 Sek. hältst, ohne dass der untere Rücken abhebt' },
+        { name:'Ein Bein gestreckt', art:'halten', seiten:2, durchgaenge:2, dauer:20,
+          vorgabe:'2 Durchgänge à 20 Sek. pro Seite',
+          erklaerung:'Wie vorher, aber ein Bein wird lang gestreckt und schwebt etwa eine Handbreit über dem Boden. Das andere Knie bleibt angewinkelt. Nach der Zeit die Seite wechseln.',
+          achte:'Je tiefer das gestreckte Bein, desto schwerer. Geh nur so tief, wie der Rücken flach am Boden bleibt.',
+          weiter:'du beide Seiten 2 × 30 Sek. sauber hältst' },
+        { name:'Beide Beine gestreckt, Arme am Körper', art:'halten', durchgaenge:3, dauer:20,
+          vorgabe:'3 Durchgänge à 20 Sek.',
+          erklaerung:'Beide Beine lang gestreckt und dicht beieinander, Fußspitzen gestreckt, Beine schweben knapp über dem Boden. Die Arme liegen neben dem Körper, der Kopf bleibt zwischen den Schultern, Blick zu den Zehen.',
+          achte:'Je höher die Beine, desto leichter. Lieber die Beine etwas höher nehmen und den Rücken flach halten als andersherum.',
+          weiter:'du 3 × 30 Sek. hältst, ohne dass die Beine zittrig absacken' },
+        { name:'Voller Hollow (Arme über Kopf)', art:'halten', durchgaenge:3, dauer:30,
+          vorgabe:'3 Durchgänge à 30 Sek.',
+          erklaerung:'Dieselbe Position, aber die Arme sind neben den Ohren nach hinten gestreckt. Der ganze Körper bildet eine lange, leicht gespannte Bananenform, nur Gesäß und unterer Rücken berühren den Boden.',
+          achte:'Das ist exakt die Körperform, die du im freien Handstand brauchst. Wenn du sie hier nicht halten kannst, kannst du sie kopfüber erst recht nicht.',
+          weiter:'du 3 × 45 Sek. schaffst – dann ist deine Rumpfspannung kein begrenzender Faktor mehr' },
+      ] },
+
+    /* ---------------------------------------------------------------- 3 */
+    { name: 'Handstand', kurz:'Handstand',
+      zweck:'Erst die Position lernen, dann das Gleichgewicht.',
+      stufen: [
+        { name:'Pike-Stand an der Wand', art:'halten', durchgaenge:3, dauer:30,
+          vorgabe:'3 Durchgänge à 30 Sek.',
+          erklaerung:'Setz dich mit dem Rücken zur Wand auf den Boden und markier dir, wo deine Fersen sind. Dreh dich um, stütz die Hände dort auf und stell die Füße an der Wand hoch, bis der Oberkörper senkrecht steht und die Hüfte über den Schultern ist. Schieb dich aktiv von den Händen weg, Schultern lang nach oben, Blick zwischen die Hände.',
+          achte:'Arme bleiben durchgestreckt und die Ohren liegen zwischen den Armen. Wenn der Kopf vorsteht, stimmt die Schulterposition nicht.',
+          weiter:'du 3 × 45 Sek. hältst und die Arme dabei gestreckt bleiben' },
+        { name:'Wandlauf (Wall Walk)', art:'kraft', saetze:3,
+          vorgabe:'3 Sätze à 3–5 Wiederholungen',
+          erklaerung:'Leg dich mit dem Bauch zum Boden, die Füße an der Wand. Lauf mit den Füßen die Wand hoch und geh gleichzeitig mit den Händen Stück für Stück zur Wand, bis Bauch und Brust fast die Wand berühren und du fast senkrecht stehst. Kurz halten, dann genauso kontrolliert wieder herunterlaufen. Das ist eine Wiederholung.',
+          achte:'Langsam, nicht fallen lassen. Der Rückweg ist der wertvolle Teil – wer sich runterplumpsen lässt, verschenkt die halbe Übung.',
+          weiter:'du 5 Wiederholungen schaffst und oben 5 Sek. ruhig stehen bleibst' },
+        { name:'Bauch zur Wand, Handstand halten', art:'halten', durchgaenge:3, dauer:30,
+          vorgabe:'3 Durchgänge à 30 Sek.',
+          erklaerung:'Lauf per Wandlauf hoch, bis du mit dem Bauch zur Wand senkrecht stehst, die Hände etwa eine Handbreit von der Wand entfernt. Streck dich lang nach oben, spann Po und Bauch an und zieh die Rippen ein, sodass der Rücken gerade ist. Ruhig atmen.',
+          achte:'Diese Richtung ist Gold wert: Bauch zur Wand zwingt dich in die gerade Linie, Rücken zur Wand lässt dich ins Hohlkreuz hängen. Wenn du nach 10 Sek. ins Hohlkreuz kippst, komm runter – saubere 10 Sek. sind mehr wert als krumme 40.',
+          weiter:'du 3 × 45 Sek. gerade hältst, ohne ins Hohlkreuz zu fallen' },
+        { name:'Schultertipper an der Wand', art:'kraft', saetze:3,
+          vorgabe:'3 Sätze à 8–10 Tipper',
+          erklaerung:'Steh im Handstand mit dem Bauch zur Wand. Verlagere das Gewicht auf eine Hand und tipp mit der anderen kurz die gegenüberliegende Schulter an, dann zurück und die Seite wechseln. Jedes Antippen zählt.',
+          achte:'Der Körper darf dabei nicht ausschlagen. Wenn die Hüfte wegkippt, ist das Gewicht noch nicht sauber auf einer Hand – dann lieber nur kurz entlasten statt wirklich antippen. Genau diese Gewichtsverlagerung brauchst du später zum Balancieren.',
+          weiter:'du 10 Tipper pro Seite schaffst, ohne dass die Hüfte wegkippt' },
+        { name:'Freistehender Handstand', art:'halten', durchgaenge:5, dauer:15,
+          vorgabe:'5 Versuche à 15 Sek.',
+          erklaerung:'Stell dich etwa einen Meter vor die Wand, Blick zum Boden. Setz die Hände schulterbreit auf, schwing ein Bein hoch und stoß dich mit dem anderen ab – nur so fest, dass du oben ankommst. Balancier über die Finger: kippst du nach vorn, drück die Fingerkuppen in den Boden, kippst du zurück, lass den Druck nach. Die Wand ist nur das Sicherheitsnetz im Rücken.',
+          achte:'Lern vorher den Ausstieg: Wenn du zu weit kippst, dreh dich über eine Schulter seitlich heraus (wie eine halbe Radwende), statt auf den Rücken zu fallen. Üb das ein paar Mal bewusst – ohne sicheren Ausstieg traut man sich nie richtig.',
+          weiter:'du mehrmals 15 Sek. frei stehst. Ab hier wird aus dem Halten der Press: nimm dir zusätzlich Zeit für Übung 6.' },
+      ] },
+
+    /* ---------------------------------------------------------------- 4 */
+    { name: 'L-Sit', kurz:'L-Sit',
+      zweck:'Gestreckte Arme, tiefe Schultern, Beine waagerecht.',
+      stufen: [
+        { name:'Füße am Boden (Erhöhung)', art:'halten', durchgaenge:3, dauer:20,
+          vorgabe:'3 Durchgänge à 20 Sek.',
+          erklaerung:'Setz dich zwischen die Parallettes oder zwei stabile Stühle, Beine gestreckt nach vorn, Fersen bleiben am Boden. Stütz dich auf und drück dich so weit hoch, dass nur noch die Fersen Kontakt haben und das Gesäß frei schwebt. Arme bleiben durchgestreckt.',
+          achte:'Drück die Schultern aktiv nach unten, weg von den Ohren. Wer in den Schultern hängt, lernt den L-Sit nie und reizt sich die Schultern.',
+          weiter:'du 3 × 30 Sek. hältst und die Schultern unten bleiben' },
+        { name:'Tuck L-Sit (Knie angezogen)', art:'halten', durchgaenge:3, dauer:15,
+          vorgabe:'3 Durchgänge à 15 Sek.',
+          erklaerung:'Gleiche Ausgangsposition, aber jetzt ziehst du beide Knie an die Brust und hebst die Füße komplett vom Boden. Oberschenkel waagerecht, Rücken möglichst gerade, Blick nach vorn.',
+          achte:'Arme bleiben gestreckt, Schultern unten. Die Beine zu halten ist weniger Bauch- als Hüftbeuger-Arbeit – wenn es vorn an der Hüfte brennt, machst du es richtig.',
+          weiter:'du 3 × 30 Sek. im Tuck hältst' },
+        { name:'Ein Bein gestreckt', art:'halten', seiten:2, durchgaenge:2, dauer:15,
+          vorgabe:'2 Durchgänge à 15 Sek. pro Seite',
+          erklaerung:'Aus dem Tuck ein Bein waagerecht nach vorn strecken, das andere bleibt angewinkelt. Nach der Zeit die Seite wechseln.',
+          achte:'Das gestreckte Bein soll wirklich waagerecht sein, nicht schräg nach unten hängen. Lieber kürzer halten und die Höhe stimmt.',
+          weiter:'du beide Seiten 2 × 20 Sek. waagerecht hältst' },
+        { name:'Voller L-Sit auf Erhöhung', art:'halten', durchgaenge:3, dauer:12,
+          vorgabe:'3 Durchgänge à 10–15 Sek.',
+          erklaerung:'Beide Beine gestreckt und geschlossen waagerecht nach vorn, Fußspitzen gestreckt. Der Körper bildet ein sauberes L: Oberkörper senkrecht, Beine waagerecht.',
+          achte:'Sobald die Beine absacken oder die Arme sich beugen, ist der Satz vorbei. Qualität schlägt Sekunden – ein krummer L-Sit wird nie ein Press.',
+          weiter:'du 3 × 20 Sek. sauber hältst' },
+        { name:'Voller L-Sit am Boden', art:'halten', durchgaenge:3, dauer:10,
+          vorgabe:'3 Durchgänge à 8–15 Sek.',
+          erklaerung:'Jetzt ohne Erhöhung: Hände flach neben die Hüfte auf den Boden, Finger nach vorn, Schultern runterdrücken und Beine waagerecht anheben. Ohne Erhöhung fehlt dir der Platz unter den Beinen – deshalb ist das deutlich schwerer.',
+          achte:'Wenn die Füße am Boden schleifen, ist das kein Rückschritt, sondern nur fehlende Kompression. Dann wird Übung 5 dein wichtigster Punkt.',
+          weiter:'du 3 × 20 Sek. am Boden hältst – ab hier lohnt sich der V-Sit als nächstes Ziel' },
+      ] },
+
+    /* ---------------------------------------------------------------- 5 */
+    { name: 'Kompression im Sitzen',
+      zweck:'Der Schlüssel vom L-Sit in den Handstand.',
+      stufen: [
+        { name:'Sitzende Vorbeuge halten', art:'halten', durchgaenge:3, dauer:40,
+          vorgabe:'3 Durchgänge à 40 Sek.',
+          erklaerung:'Setz dich mit gestreckten, geschlossenen Beinen auf den Boden und lehn dich mit geradem Rücken nach vorn, so weit es geht. Zieh dich sanft mit den Händen an Schienbeinen oder Füßen weiter, ohne den Rücken rund zu machen.',
+          achte:'Das ist die Beweglichkeit, ohne die keine Kompression funktioniert. Wenn du hier nicht an die Zehen kommst, kannst du die Beine im Press nie dicht genug an den Körper ziehen.',
+          weiter:'du entspannt 40 Sek. mit geradem Rücken weit vorn bleibst' },
+        { name:'Beine aktiv lösen (im Sitzen)', art:'kraft', saetze:3,
+          vorgabe:'3 Sätze à 8–12 Wiederholungen',
+          erklaerung:'Sitz mit gestreckten Beinen, die Hände flach neben der Hüfte. Heb beide Beine gestreckt vom Boden ab, so hoch du kannst, halte eine Sekunde und senk sie langsam wieder. Der Oberkörper bleibt aufrecht.',
+          achte:'Nur die Beine bewegen sich, nicht der Oberkörper. Sehr wenig Höhe ist völlig normal – es zählt, dass die Hüftbeuger ziehen und nicht der Schwung.',
+          weiter:'du 12 saubere Wiederholungen schaffst' },
+        { name:'Kompression mit Zug', art:'kraft', saetze:3,
+          vorgabe:'3 Sätze à 5 Wdh. mit je 5 Sek. Zug',
+          erklaerung:'Sitz mit gestreckten Beinen, greif mit beiden Händen hinter die Waden und zieh dich fest an die Beine heran. Jetzt versuch, die gestreckten Beine aktiv gegen diesen Zug anzuheben, und halte die Spannung fünf Sekunden. Kurz lösen, dann die nächste Wiederholung.',
+          achte:'Die Beine heben sich dabei kaum – das ist richtig so. Die Arbeit passiert im Zug. Genau diese Spannung brauchst du, um im Press die Hüfte über die Schultern zu bekommen.',
+          weiter:'du 3 × 5 Wiederholungen mit je 5 Sek. hältst, ohne dass der Rücken rund wird' },
+        { name:'Beinheber auf Erhöhung', art:'kraft', saetze:3,
+          vorgabe:'3 Sätze à 6–10 Wiederholungen',
+          erklaerung:'Setz dich auf zwei Blöcke oder Parallettes, sodass unter den Beinen Platz ist. Stütz dich mit gestreckten Armen auf, heb die geschlossenen gestreckten Beine so hoch wie möglich – im Idealfall über die Waagerechte – und senk sie langsam.',
+          achte:'Oberhalb der Waagerechten beginnt der eigentliche Press. Wenn du hier Höhe gewinnst, hebt sich dein Becken von allein, und genau das ist die Bewegung, die dich später hochbringt.',
+          weiter:'du 10 Wiederholungen deutlich über der Waagerechten schaffst' },
+      ] },
+
+    /* ---------------------------------------------------------------- 6 */
+    { name: 'Stütz & gerade Arme (Weg zum Press)',
+      zweck:'Die Kraft, die L-Sit und Handstand verbindet.',
+      stufen: [
+        { name:'Stützhalten, Schultern unten', art:'halten', durchgaenge:3, dauer:30,
+          vorgabe:'3 Durchgänge à 30 Sek.',
+          erklaerung:'Stütz dich auf Parallettes oder zwei Stühle, Arme durchgestreckt, Beine hängen locker. Drück dich aktiv nach oben weg, sodass die Schultern weit von den Ohren entfernt sind, und spann Po und Bauch an.',
+          achte:'Ellbogen vollständig gestreckt. Wenn du anfängst, in den Schultern zu hängen, ist der Satz vorbei.',
+          weiter:'du 3 × 45 Sek. mit aktiv tiefen Schultern hältst' },
+        { name:'Schulterblatt-Drücken im Stütz', art:'kraft', saetze:3,
+          vorgabe:'3 Sätze à 8–12 Wiederholungen',
+          erklaerung:'Aus dem Stütz: Lass dich bei gestreckten Armen langsam zwischen die Schultern sinken, und drück dich dann wieder weit nach oben heraus. Nur die Schulterblätter bewegen sich, die Ellbogen bleiben durchgestreckt.',
+          achte:'Die Bewegung ist klein, vielleicht zehn Zentimeter. Wenn die Ellbogen mitarbeiten, ist es keine Schulterblatt-Übung mehr. Das ist die Kraft, die du brauchst, um mit geraden Armen zu drücken.',
+          weiter:'du 12 Wiederholungen mit deutlicher, kontrollierter Bewegung schaffst' },
+        { name:'Pike-Press an der Erhöhung', art:'kraft', saetze:3,
+          vorgabe:'3 Sätze à 5–8 Wiederholungen',
+          erklaerung:'Stell die Füße auf eine Erhöhung (Sofa, Bett, Kasten) und stütz die Hände am Boden, sodass die Hüfte hoch über den Schultern steht. Schieb die Hüfte jetzt mit gestreckten Armen noch weiter nach oben Richtung Handstand, bis die Schultern fast senkrecht sind, und lass sie langsam zurück.',
+          achte:'Arme bleiben gestreckt – es ist kein Liegestütz. Wenn du die Ellbogen beugst, trainierst du etwas anderes.',
+          weiter:'du 8 Wiederholungen schaffst, ohne die Arme zu beugen' },
+        { name:'Negative: aus dem Handstand in den Pike', art:'kraft', saetze:3,
+          vorgabe:'3 Sätze à 3–5 Wiederholungen',
+          erklaerung:'Geh mit dem Bauch zur Wand in den Handstand. Senk jetzt die gestreckten Beine ganz langsam ab, so weit es geht, während die Hüfte so hoch wie möglich bleibt – das ist der Press rückwärts. Setz ab, komm wieder hoch und wiederhole.',
+          achte:'Langsam ist der ganze Punkt: Je langsamer du absenkst, desto mehr lernt dein Körper den Weg nach oben. Fünf Sekunden Absenken sind das Ziel.',
+          weiter:'du 5 Wiederholungen mit je 5 Sek. Absenken schaffst' },
+        { name:'Press-Versuche aus dem Tuck', art:'kraft', saetze:3,
+          vorgabe:'3 Sätze à 3–5 Versuche',
+          erklaerung:'Geh in den Tuck L-Sit. Verlagere das Gewicht langsam nach vorn über die Hände, zieh die Knie dabei eng an die Brust und lass das Becken steigen, bis die Hüfte über den Schultern ist. Von dort die Beine nach oben strecken. Die Wand darf anfangs im Rücken helfen.',
+          achte:'Der Press ist kein Schwung, sondern ein langsames Verlagern. Wenn du dich hochreißt, lernst du nichts. Diese Stufe ist der eigentliche Zusammenbau: L-Sit halten können, Kompression haben, gerade Arme drücken – alles davor war die Vorbereitung dafür.',
+          weiter:'du den Press mehrfach ohne Schwung und ohne Wand schaffst. Dann hast du das Ziel dieses Programms erreicht.' },
+      ] },
+
+    /* ---------------------------------------------------------------- 7 */
+    { name: 'Ausklang: Dehnen',
+      art:'halten', dauer:40,
+      einheitenNamen:['Sitzende Vorbeuge · 40 Sek.','Schulterdehnung am Türrahmen · 40 Sek.'],
+      vorgabe:'2 × 40 Sek.',
+      erklaerung:'Erst die sitzende Vorbeuge: gestreckte Beine, mit geradem Rücken nach vorn lehnen und ruhig atmen. Dann die Schulterdehnung: einen Unterarm seitlich an einen Türrahmen legen, Ellbogen auf Schulterhöhe, und den Oberkörper langsam wegdrehen, bis es vorn in der Schulter zieht. Beide Seiten.',
+      achte:'Ruhig atmen und nicht wippen. Nach Handstand-Arbeit sind die Schultern verkürzt – ein paar Minuten Dehnen halten die Position langfristig überhaupt erst erreichbar.' },
+  ],
+};
+
+/* =========================================================================
+   Geführte Programme - gemeinsamer Motor
+   -------------------------------------------------------------------------
+   Ein geführtes Programm ist eine feste Abfolge von Übungen, die man Schritt
+   für Schritt abarbeitet. Es ist KEIN Trainingsplan: es legt keine
+   `Uebung`-Objekte an und rührt die Progressions-Logik der normalen Trainings
+   nicht an. Abgeschlossene Durchläufe landen in `state.programmEintraege`.
+
+   Zwei Sorten von Übungen:
+   - ohne `stufen`: eine feste Vorgabe (so arbeitet „Knie & Mobility")
+   - mit `stufen`:  mehrere Schwierigkeitsstufen. Trainiert wird immer die
+                    eingestellte Stufe; bei jeder steht in `weiter`, woran man
+                    merkt, dass die nächste dran ist. Die eingestellte Stufe
+                    liegt in `state.stufen` und bleibt dauerhaft erhalten
+                    (auch über abgeschlossene Durchläufe hinweg).
+   ========================================================================= */
+const PROGRAMME = [KNIE_PROGRAMM, SKILL_PROGRAMM];
+function findeProgramm(id){ return PROGRAMME.find(p => p.id === id) || PROGRAMME[0]; }
+function programmeImBereich(bereich){ return PROGRAMME.filter(p => p.bereich === bereich); }
+
+/* ---- Stufen ---- */
+function hatStufen(u){ return !!u && Array.isArray(u.stufen) && u.stufen.length > 0; }
+/// Welche Stufe gerade eingestellt ist (0 = die erste).
+function stufenIndex(progId, uIdx){
+  const u = findeProgramm(progId).uebungen[uIdx];
+  if(!hatStufen(u)) return 0;
+  const gespeichert = ((state.stufen || {})[progId] || {})[uIdx] | 0;
+  return Math.max(0, Math.min(u.stufen.length - 1, gespeichert));
+}
+/// Die Übung so, wie sie auf der eingestellten Stufe aussieht. Übungen ohne
+/// Stufen liefern sich selbst - dadurch funktioniert beides mit demselben Code.
+function aktiveStufe(progId, uIdx){
+  const u = findeProgramm(progId).uebungen[uIdx];
+  return hatStufen(u) ? u.stufen[stufenIndex(progId, uIdx)] : u;
+}
+/// Stufe wechseln. Die Haken dieser Übung werden dabei zurückgesetzt, weil die
+/// neue Stufe andere Sätze und Zeiten hat.
+function setzeStufe(progId, uIdx, neuerIndex){
+  const u = findeProgramm(progId).uebungen[uIdx];
+  if(!hatStufen(u)) return false;
+  const ziel = Math.max(0, Math.min(u.stufen.length - 1, neuerIndex));
+  if(ziel === stufenIndex(progId, uIdx)) return false;
+  state.stufen = state.stufen || {};
+  state.stufen[progId] = state.stufen[progId] || {};
+  state.stufen[progId][uIdx] = ziel;
+  const l = lauf(progId);
+  let hatteHaken = false;
+  Object.keys(l.erledigt).forEach(k => { if(k.indexOf(uIdx + '-') === 0){ delete l.erledigt[k]; hatteHaken = true; } });
+  delete l.dauer[uIdx];
+  saveState(); saveLauf();
+  return hatteHaken;
+}
+
+/* ---- Einheiten (das, was abgehakt wird) ---- */
+/// Sätze bzw. Durchgänge der aktuellen Stufe, bei seitengetrennten Übungen
+/// jeweils links und rechts einzeln. `einheitenNamen` erlaubt eigene
+/// Beschriftungen, wenn eine Übung aus verschiedenen Teilen besteht.
+function programmEinheiten(progId, uIdx){
+  const s = aktiveStufe(progId, uIdx);
+  if(Array.isArray(s.einheitenNamen)) return s.einheitenNamen.slice();
+  const runden      = s.art === 'halten' ? (s.durchgaenge || 1) : (s.saetze || 1);
+  const rundenLabel = s.art === 'halten' ? 'Durchgang' : 'Satz';
+  const seiten      = s.seiten === 2 ? ['Links','Rechts'] : [null];
   const liste = [];
   for(let r = 1; r <= runden; r++){
     seiten.forEach(seite => {
       const teile = [];
       if(runden > 1) teile.push(rundenLabel + ' ' + r);
       if(seite) teile.push(seite);
-      liste.push(teile.join(' · ') || (u.art === 'halten' ? 'Halten' : 'Satz 1'));
+      liste.push(teile.join(' · ') || (s.art === 'halten' ? 'Halten' : 'Satz 1'));
     });
   }
   return liste;
 }
-
-/// Gesamtzahl der Einheiten des Programms (33) - Basis für die Fortschrittsanzeige.
-function knieEinheitenGesamt(){
-  return KNIE_PROGRAMM.uebungen.reduce((s,u) => s + knieEinheiten(u).length, 0);
+function programmEinheitenGesamt(progId){
+  return findeProgramm(progId).uebungen.reduce((s,_,i) => s + programmEinheiten(progId, i).length, 0);
 }
 
 const RUHIGE_ZIELE = ['yoga','mobility'];
@@ -1014,10 +1261,14 @@ function migriereState(s){
   if(!s.aktivId) s.aktivId = 'standard';
   if(s.aktivId !== 'standard' && !s.plaene.some(p => p.id === s.aktivId)) s.aktivId = 'standard';
   if(!Array.isArray(s.eintraege)) s.eintraege = [];
-  // Abgeschlossene Mobility-Programme liegen in einer EIGENEN Liste, damit die
-  // Trainings-Historie (`eintraege`) und alle Statistiken unberührt bleiben.
-  // Aeltere Sicherungen haben das Feld nicht - dann startet es einfach leer.
-  if(!Array.isArray(s.mobilityEintraege)) s.mobilityEintraege = [];
+  // Abgeschlossene Durchlaeufe geführter Programme liegen in einer EIGENEN
+  // Liste, damit die Trainings-Historie (`eintraege`) und alle Statistiken
+  // unberührt bleiben. Frueher hiess das Feld `mobilityEintraege` (nur das
+  // Knie-Programm); der Inhalt wird verlustfrei uebernommen.
+  if(!Array.isArray(s.programmEintraege)) s.programmEintraege = Array.isArray(s.mobilityEintraege) ? s.mobilityEintraege : [];
+  delete s.mobilityEintraege;
+  // Eingestellte Stufen der Skill-Programme (bleiben ueber Durchlaeufe hinweg).
+  if(!s.stufen || typeof s.stufen !== 'object') s.stufen = {};
   delete s.split;
   return s;
 }
@@ -1066,47 +1317,62 @@ function loadEingaben(){
 function saveEingaben(){ try{ localStorage.setItem(EINGABEN_KEY, JSON.stringify(ui.eingaben)); }catch(e){} }
 
 /* -------------------------------------------------------------------------
-   Laufzustand des geführten Knie-Programms
-   Wird gespeichert, damit ein angefangener Durchlauf einen App-Wechsel oder
-   einen Reload übersteht (iOS wirft Seiten im Hintergrund aus dem Speicher).
+   Laufzustand der geführten Programme
+   Pro Programm wird gemerkt, wo man gerade ist und was schon abgehakt ist.
+   Gespeichert wird das, damit ein angefangener Durchlauf einen App-Wechsel
+   oder einen Reload übersteht (iOS wirft Seiten im Hintergrund aus dem
+   Speicher).
    ------------------------------------------------------------------------- */
-const KNIE_KEY = 'ironlog.knie';
-function loadKnieLauf(){
+const LAUF_KEY = 'ironlog.laeufe';
+function normLauf(p){
+  return { index: (p && p.index) | 0, erledigt: (p && p.erledigt) || {}, dauer: (p && p.dauer) || {}, startZeit: (p && p.startZeit) || null };
+}
+function loadLauf(){
+  const alle = {};
   try{
-    const raw = localStorage.getItem(KNIE_KEY);
+    const raw = localStorage.getItem(LAUF_KEY);
     if(raw){
       const p = JSON.parse(raw);
-      if(p && typeof p === 'object') return { index: p.index|0, erledigt: p.erledigt || {}, dauer: p.dauer || {}, startZeit: p.startZeit || null, erklaerungOffen: false };
+      if(p && typeof p === 'object') Object.keys(p).forEach(id => { alle[id] = normLauf(p[id]); });
     }
   }catch(e){}
-  return { index:0, erledigt:{}, dauer:{}, startZeit:null, erklaerungOffen:false };
+  // Frueher lag der angefangene Knie-Durchlauf allein unter 'ironlog.knie'.
+  try{
+    const alt = localStorage.getItem('ironlog.knie');
+    if(alt && !alle.knie) alle.knie = normLauf(JSON.parse(alt));
+  }catch(e){}
+  return alle;
 }
-const knieLauf = loadKnieLauf();
-function saveKnieLauf(){
-  try{ localStorage.setItem(KNIE_KEY, JSON.stringify({ index:knieLauf.index, erledigt:knieLauf.erledigt, dauer:knieLauf.dauer, startZeit:knieLauf.startZeit })); }catch(e){}
+const laeufe = loadLauf();
+function lauf(progId){
+  if(!laeufe[progId]) laeufe[progId] = normLauf(null);
+  return laeufe[progId];
 }
-function knieLaufZuruecksetzen(){
-  knieLauf.index = 0; knieLauf.erledigt = {}; knieLauf.dauer = {}; knieLauf.startZeit = null; knieLauf.erklaerungOffen = false;
-  try{ localStorage.removeItem(KNIE_KEY); }catch(e){}
+function saveLauf(){ try{ localStorage.setItem(LAUF_KEY, JSON.stringify(laeufe)); }catch(e){} }
+function laufZuruecksetzen(progId){
+  laeufe[progId] = normLauf(null);
+  saveLauf();
 }
-function knieSchluessel(ui_, ei){ return ui_ + '-' + ei; }
-function knieErledigt(uIdx, eIdx){ return !!knieLauf.erledigt[knieSchluessel(uIdx, eIdx)]; }
-function knieHakenUm(uIdx, eIdx){
-  const k = knieSchluessel(uIdx, eIdx);
-  if(knieLauf.erledigt[k]) delete knieLauf.erledigt[k]; else knieLauf.erledigt[k] = true;
-  if(!knieLauf.startZeit) knieLauf.startZeit = Date.now();
-  saveKnieLauf();
+function progSchluessel(uIdx, eIdx){ return uIdx + '-' + eIdx; }
+function progErledigt(progId, uIdx, eIdx){ return !!lauf(progId).erledigt[progSchluessel(uIdx, eIdx)]; }
+function progHakenUm(progId, uIdx, eIdx){
+  const l = lauf(progId);
+  const k = progSchluessel(uIdx, eIdx);
+  if(l.erledigt[k]) delete l.erledigt[k]; else l.erledigt[k] = true;
+  if(!l.startZeit) l.startZeit = Date.now();
+  saveLauf();
 }
 /// Fortschritt über das gesamte Programm: wie viele Einheiten sind abgehakt?
-function knieFortschritt(){
+function progFortschritt(progId){
   let erledigt = 0;
-  KNIE_PROGRAMM.uebungen.forEach((u,i) => knieEinheiten(u).forEach((_,k) => { if(knieErledigt(i,k)) erledigt++; }));
-  return { erledigt, gesamt: knieEinheitenGesamt() };
+  findeProgramm(progId).uebungen.forEach((_,i) =>
+    programmEinheiten(progId, i).forEach((__,k) => { if(progErledigt(progId, i, k)) erledigt++; }));
+  return { erledigt, gesamt: programmEinheitenGesamt(progId) };
 }
 /// Die Einheit, die als Nächstes dran ist: die erste noch nicht abgehakte.
-function knieAktuelleEinheit(uIdx){
-  const anzahl = knieEinheiten(KNIE_PROGRAMM.uebungen[uIdx]).length;
-  for(let k = 0; k < anzahl; k++){ if(!knieErledigt(uIdx, k)) return k; }
+function progAktuelleEinheit(progId, uIdx){
+  const anzahl = programmEinheiten(progId, uIdx).length;
+  for(let k = 0; k < anzahl; k++){ if(!progErledigt(progId, uIdx, k)) return k; }
   return null;
 }
 
@@ -1124,7 +1390,7 @@ function tagesSchluessel(datum){
 function trainingsTage(){
   const tage = new Set();
   (state.eintraege || []).forEach(e => tage.add(tagesSchluessel(e.datum)));
-  (state.mobilityEintraege || []).forEach(e => tage.add(tagesSchluessel(e.datum)));
+  (state.programmEintraege || []).forEach(e => tage.add(tagesSchluessel(e.datum)));
   return tage;
 }
 
@@ -1293,15 +1559,15 @@ function renderTrainingAuswahl(){
   karten += eigene.map(p => planAuswahlKarte(p, false)).join('');
 
   const leer = !zeigeStandard && !eigene.length;
-  // Im Mobility-Bereich steht das gefuehrte Knie-Programm oben: es ist der
-  // Haupteinstieg, die eigenen Mobility-Trainings kommen darunter.
+  // Gefuehrte Programme stehen oben: sie sind der Haupteinstieg des Bereichs,
+  // die eigenen Trainings kommen darunter.
   const inhalt =
       `<div class="muted" style="font-size:13px; margin-bottom:14px;">${BEREICH_TEXT[bereich]}</div>`
-    + (bereich === 'mobility' ? knieProgrammKarte() : '')
+    + programmeImBereich(bereich).map(p => programmKarte(p.id)).join('')
     + (leer
         ? `<div class="empty-hint" style="margin-bottom:14px;">Noch kein eigenes ${BEREICH_LABEL[bereich]}-Training angelegt.</div>`
         : karten)
-    + `<button class="${leer && bereich !== 'mobility' ? 'btn-primary btn-compact' : 'btn-ghost'}" style="margin-top:4px;" data-act="openModal" data-arg="neuesTraining">+ Eigenes ${BEREICH_LABEL[bereich]}-Training anlegen</button>`
+    + `<button class="${leer && !programmeImBereich(bereich).length ? 'btn-primary btn-compact' : 'btn-ghost'}" style="margin-top:4px;" data-act="openModal" data-arg="neuesTraining">+ Eigenes ${BEREICH_LABEL[bereich]}-Training anlegen</button>`
     + `<button class="btn-ghost" style="margin-top:10px;" data-act="planSpeichern">📋 Aktuelles Training als eigenes speichern</button>`;
 
   return `<div class="wrap">
@@ -1395,10 +1661,10 @@ function renderUebungCard(uebung, idx, anzahl){
 function renderHistorie(){
   // Krafttrainings und abgeschlossene Mobility-Programme stehen in EINER Liste,
   // nach Datum gemischt. Gespeichert bleiben sie getrennt (state.eintraege bzw.
-  // state.mobilityEintraege), damit Statistiken und Progression unberührt bleiben.
+  // state.programmEintraege), damit Statistiken und Progression unberührt bleiben.
   const liste = []
     .concat(state.eintraege.map(e => ({ typ:'training', datum:e.datum, obj:e })))
-    .concat((state.mobilityEintraege || []).map(e => ({ typ:'mobility', datum:e.datum, obj:e })))
+    .concat((state.programmEintraege || []).map(e => ({ typ:'programm', datum:e.datum, obj:e })))
     .sort((a,b) => new Date(b.datum) - new Date(a.datum));
   let html = `<div class="wrap">
     <div class="top-bar"><div class="logo-header">${logoMark()}</div><hr class="sep"></div>
@@ -1406,16 +1672,16 @@ function renderHistorie(){
   if(!liste.length){
     html += `<div class="empty-state"><div style="width:44px; height:44px;">${ICONS.clock}</div><div style="font-weight:700; color:#fff;">Noch keine Trainings</div><div>Schließ dein erstes Training ab, dann erscheint es hier.</div></div>`;
   } else {
-    liste.forEach(x => { html += x.typ === 'mobility' ? renderMobilityHistCard(x.obj) : renderHistCard(x.obj); });
+    liste.forEach(x => { html += x.typ === 'programm' ? renderProgrammHistCard(x.obj) : renderHistCard(x.obj); });
   }
   html += `</div></div>`;
   return html;
 }
 
-/// Historien-Karte eines abgeschlossenen Mobility-Programms: kein bewegtes
+/// Historien-Karte eines abgeschlossenen geführten Programms: kein bewegtes
 /// Gewicht, sondern abgehakte Einheiten. Nur löschbar, nicht bearbeitbar - es
 /// gibt keine Werte, die man nachträglich korrigieren müsste.
-function renderMobilityHistCard(eintrag){
+function renderProgrammHistCard(eintrag){
   const open = ui.historieOpen.has(eintrag.id);
   const voll = (eintrag.erledigt || 0) >= (eintrag.gesamt || 0);
   let body = '';
@@ -1424,19 +1690,19 @@ function renderMobilityHistCard(eintrag){
     (eintrag.uebungen || []).forEach(u => {
       const fertig = u.erledigt >= u.gesamt;
       body += `<div class="hist-satz-row">
-        <span style="flex:1; min-width:0; color:${fertig ? 'inherit' : 'var(--iron-muted)'};">${esc(u.name)}</span>
-        <span style="color:${fertig ? 'var(--iron-good)' : 'var(--iron-muted)'};">${u.erledigt}/${u.gesamt}</span>
+        <span style="flex:1; min-width:0; color:${fertig ? 'inherit' : 'var(--iron-muted)'};">${esc(u.name)}${u.stufe ? `<span class="muted" style="font-size:12px;"> · Stufe ${u.stufeNr}: ${esc(u.stufe)}</span>` : ''}</span>
+        <span style="color:${fertig ? 'var(--iron-good)' : 'var(--iron-muted)'}; white-space:nowrap;">${u.erledigt}/${u.gesamt}</span>
       </div>`;
     });
     if(eintrag.minuten) body += `<div class="hist-note">Dauer: ca. ${eintrag.minuten} ${eintrag.minuten === 1 ? 'Minute' : 'Minuten'}</div>`;
     body += `<hr class="sep"><div class="hist-actions">
-      <button style="color:var(--iron-danger); margin-left:auto;" data-act="mobilityLoeschen" data-arg="${eintrag.id}">🗑 Löschen</button>
+      <button style="color:var(--iron-danger); margin-left:auto;" data-act="programmLoeschen" data-arg="${eintrag.id}">🗑 Löschen</button>
     </div></div>`;
   }
   return `<div class="card hist-card" style="padding:0;">
     <div class="hist-head" data-act="toggleHist" data-arg="${eintrag.id}">
       <div class="info">
-        <div class="day-name">🦵 ${esc(eintrag.programmName || 'Mobility-Programm')}</div>
+        <div class="day-name">${eintrag.icon || '🦵'} ${esc(eintrag.programmName || 'Programm')}</div>
         <div class="date">${germanDateTime(new Date(eintrag.datum))}</div>
       </div>
       <div class="vol">
@@ -1498,7 +1764,7 @@ function renderModal(){
     case 'neuesTraining': return renderNeuesTrainingModal();
     case 'sicherung': return renderSicherungModal();
     case 'timer': return renderTimerModal();
-    case 'knie': return renderKnieModal();
+    case 'prog': return renderProgrammModal();
   }
   return '';
 }
@@ -1839,71 +2105,95 @@ function renderNeuesTrainingModal(){
   return sheet(`Neues ${BEREICH_LABEL[m.bereich] || ''}-Training`, {act:'closeModal', label:'Abbrechen'}, null, body);
 }
 
-/* ---- Geführtes Knie-Programm ---- */
-/// Einstiegs-Kachel im Mobility-Bereich: zeigt den Stand eines angefangenen
-/// Durchlaufs und wann das Programm zuletzt abgeschlossen wurde.
-function knieProgrammKarte(){
-  const prog = KNIE_PROGRAMM;
-  const laeufe = (state.mobilityEintraege || []).filter(e => e.programmId === prog.id);
-  const letzter = laeufe[0];
-  const fort = knieFortschritt();
+/* ---- Geführte Programme: Kachel, Fenster, Timer ---- */
+/// Einstiegs-Kachel eines geführten Programms: zeigt den Stand eines
+/// angefangenen Durchlaufs und wann es zuletzt abgeschlossen wurde.
+function programmKarte(progId){
+  const prog = findeProgramm(progId);
+  const laeufeListe = (state.programmEintraege || []).filter(e => e.programmId === prog.id);
+  const letzter = laeufeListe[0];
+  const fort = progFortschritt(prog.id);
   const angefangen = fort.erledigt > 0 && fort.erledigt < fort.gesamt;
   const zeile = angefangen
     ? `Angefangen · ${fort.erledigt} von ${fort.gesamt} Einheiten abgehakt`
-    : (letzter ? `Zuletzt gemacht am ${germanDate(new Date(letzter.datum))} · ${laeufe.length} ${laeufe.length === 1 ? 'Durchlauf' : 'Durchläufe'}`
+    : (letzter ? `Zuletzt gemacht am ${germanDate(new Date(letzter.datum))} · ${laeufeListe.length} ${laeufeListe.length === 1 ? 'Durchlauf' : 'Durchläufe'}`
                : 'Noch nicht gemacht');
+  // Bei Programmen mit Stufen sieht man die wichtigsten auf einen Blick.
+  // `kurz` markiert, welche Übungen auf der Kachel auftauchen - sonst wird die
+  // Zeile zu lang und sagt weniger aus.
+  const stufenUebersicht = prog.uebungen
+    .map((u,i) => (hatStufen(u) && u.kurz) ? `${esc(u.kurz)} ${stufenIndex(prog.id,i)+1}/${u.stufen.length}` : null)
+    .filter(Boolean).join(' · ');
   return `<div class="plan-karte aktiv">
     <div style="display:flex; align-items:flex-start; gap:8px;">
       <div style="flex:1; min-width:0;">
-        <div style="font-weight:700;">🦵 ${esc(prog.name)}<span class="badge" style="margin-left:6px;">Geführt</span></div>
+        <div style="font-weight:700;">${prog.icon || '▶'} ${esc(prog.name)}<span class="badge" style="margin-left:6px;">Geführt</span></div>
         <div class="muted" style="font-size:12px; margin-top:2px;">${prog.uebungen.length} Übungen · ${prog.dauerHinweis} · ${esc(prog.untertitel)}</div>
       </div>
-      ${angefangen ? `<button class="mini-btn danger" data-act="knieZuruecksetzen" aria-label="Stand verwerfen">↺</button>` : ''}
+      ${angefangen ? `<button class="mini-btn danger" data-act="progZuruecksetzen" data-prog="${prog.id}" aria-label="Stand verwerfen">↺</button>` : ''}
     </div>
     <div class="muted" style="font-size:12px; margin-top:8px;">${esc(zeile)}</div>
+    ${stufenUebersicht ? `<div class="muted" style="font-size:11px; margin-top:4px; opacity:0.8;">Deine Stufen: ${stufenUebersicht}</div>` : ''}
     <div class="timer-ring" style="margin:10px 0 12px;"><div style="width:${fort.gesamt ? (fort.erledigt/fort.gesamt*100) : 0}%;"></div></div>
-    <button class="btn-primary btn-compact" data-act="knieStart">▶ ${angefangen ? 'Weitermachen' : 'Programm starten'}</button>
+    <button class="btn-primary btn-compact" data-act="progStart" data-prog="${prog.id}">▶ ${angefangen ? 'Weitermachen' : 'Programm starten'}</button>
   </div>`;
 }
 
-function knieStartLabel(){
-  if(knieTimer.laeuft) return '⏸ Pause';
-  return (knieTimer.gesamt > 0 && knieTimer.rest > 0 && knieTimer.rest < knieTimer.gesamt) ? '▶ Weiter' : '▶ Start';
+function progStartLabel(){
+  if(progTimer.laeuft) return '⏸ Pause';
+  return (progTimer.gesamt > 0 && progTimer.rest > 0 && progTimer.rest < progTimer.gesamt) ? '▶ Weiter' : '▶ Start';
 }
-/// Die Sekunden, die im Timer stehen: der laufende Rest, sonst die Vorgabe der Übung.
-function knieAnzeigeSekunden(uIdx){
-  if(knieTimer.uebung === uIdx && knieTimer.gesamt > 0) return knieTimer.rest;
-  return knieTimerVorgabe(uIdx);
+/// Die Sekunden, die im Timer stehen: der laufende Rest, sonst die Vorgabe.
+function progAnzeigeSekunden(progId, uIdx){
+  if(progTimer.programmId === progId && progTimer.uebung === uIdx && progTimer.gesamt > 0) return progTimer.rest;
+  return progTimerVorgabe(progId, uIdx);
 }
-function renderKnieModal(){
-  const prog = KNIE_PROGRAMM;
+function renderProgrammModal(){
+  const pid    = (ui.modal && ui.modal.programmId) || 'knie';
+  const prog   = findeProgramm(pid);
+  const l      = lauf(pid);
   const anzahl = prog.uebungen.length;
-  const i = Math.max(0, Math.min(anzahl - 1, knieLauf.index));
-  const u = prog.uebungen[i];
-  const einheiten = knieEinheiten(u);
-  const aktuell = knieAktuelleEinheit(i);
-  const fort = knieFortschritt();
-  const letzte = i === anzahl - 1;
+  const i      = Math.max(0, Math.min(anzahl - 1, l.index));
+  const u      = prog.uebungen[i];
+  const s      = aktiveStufe(pid, i);            // die Übung auf der eingestellten Stufe
+  const sIdx   = stufenIndex(pid, i);
+  const einheiten = programmEinheiten(pid, i);
+  const aktuell   = progAktuelleEinheit(pid, i);
+  const fort      = progFortschritt(pid);
+  const letzte    = i === anzahl - 1;
+  const offen     = !!(ui.modal && ui.modal.erklaerung);
 
+  // ---- Timer-Block nur bei Halteübungen ----
   let block = '';
-  if(u.art === 'halten'){
-    const sek = knieAnzeigeSekunden(i);
-    const gesamt = (knieTimer.uebung === i && knieTimer.gesamt > 0) ? knieTimer.gesamt : sek;
+  if(s.art === 'halten'){
+    const sek    = progAnzeigeSekunden(pid, i);
+    const gesamt = (progTimer.programmId === pid && progTimer.uebung === i && progTimer.gesamt > 0) ? progTimer.gesamt : sek;
     const breite = gesamt > 0 ? (100 - (sek/gesamt)*100) : 0;
     block = `<div class="card" style="margin-top:14px;">
       <div class="timer-display" style="padding:4px 0 0;">
-        <div class="timer-phase" id="knieEinheit" style="color:${aktuell === null ? 'var(--iron-good)' : 'var(--iron-accent)'};">${aktuell === null ? 'Alles geschafft' : esc(einheiten[aktuell])}</div>
-        <div class="timer-time knie-zeit" id="knieZeit">${mmss(sek)}</div>
-        <div class="timer-ring"><div id="knieBar" style="width:${breite}%;"></div></div>
+        <div class="timer-phase" id="progEinheit" style="color:${aktuell === null ? 'var(--iron-good)' : 'var(--iron-accent)'};">${aktuell === null ? 'Alles geschafft' : esc(einheiten[aktuell])}</div>
+        <div class="timer-time prog-zeit" id="progZeit">${mmss(sek)}</div>
+        <div class="timer-ring"><div id="progBar" style="width:${breite}%;"></div></div>
       </div>
       <div style="display:flex; align-items:center; gap:10px; margin-top:14px;">
-        <button class="mini-btn" data-act="knieTimerAnpassen" data-delta="-10" aria-label="10 Sekunden weniger">–10</button>
-        <button class="btn-primary btn-compact" id="knieStartBtn" data-act="knieTimerStartPause" ${aktuell === null ? 'disabled' : ''}>${knieStartLabel()}</button>
-        <button class="mini-btn" data-act="knieTimerAnpassen" data-delta="10" aria-label="10 Sekunden mehr">+10</button>
+        <button class="mini-btn" data-act="progTimerAnpassen" data-delta="-10" aria-label="10 Sekunden weniger">–10</button>
+        <button class="btn-primary btn-compact" id="progStartBtn" data-act="progTimerStartPause" ${aktuell === null ? 'disabled' : ''}>${progStartLabel()}</button>
+        <button class="mini-btn" data-act="progTimerAnpassen" data-delta="10" aria-label="10 Sekunden mehr">+10</button>
       </div>
       <div class="muted" style="font-size:12px; margin-top:10px; text-align:center;">Wenn die Zeit um ist, meldet sich der Timer und hakt den Durchgang automatisch ab.</div>
     </div>`;
   }
+
+  // ---- Stufen-Umschalter ----
+  const stufenZeile = hatStufen(u) ? `
+    <div class="stufen-zeile">
+      <button class="mini-btn" data-act="progStufe" data-delta="-1" ${sIdx === 0 ? 'disabled' : ''} aria-label="Eine Stufe leichter">‹</button>
+      <div style="flex:1; min-width:0; text-align:center;">
+        <div style="font-size:10px; font-weight:700; letter-spacing:1.2px; color:var(--iron-muted);">STUFE ${sIdx+1} VON ${u.stufen.length}</div>
+        <div style="font-weight:700; font-size:15px;">${esc(s.name)}</div>
+      </div>
+      <button class="mini-btn" data-act="progStufe" data-delta="1" ${sIdx === u.stufen.length-1 ? 'disabled' : ''} aria-label="Eine Stufe schwerer">›</button>
+    </div>` : '';
 
   const body = `
     <div style="display:flex; align-items:baseline; gap:8px;">
@@ -1912,22 +2202,28 @@ function renderKnieModal(){
     </div>
     <div class="timer-ring" style="margin:8px 0 16px;"><div style="width:${fort.gesamt ? (fort.erledigt/fort.gesamt*100) : 0}%;"></div></div>
 
+    ${(i === 0 && prog.hinweis) ? `<div class="prog-hinweis">${esc(prog.hinweis)}</div>` : ''}
+
     <div class="card">
       <div style="font-size:19px; font-weight:800;">${esc(u.name)}</div>
-      <div class="muted" style="font-size:13px; margin-top:3px;">${esc(u.vorgabe)}</div>
-      <button class="knie-info" data-act="knieErklaerung">${ICONS.info} Erklärung${knieLauf.erklaerungOffen ? ' ausblenden' : ''}</button>
-      ${knieLauf.erklaerungOffen ? `<div class="knie-erklaerung">${esc(u.erklaerung)}</div>` : ''}
+      ${u.zweck ? `<div class="prog-zweck">${esc(u.zweck)}</div>` : ''}
+      ${stufenZeile}
+      <div class="muted" style="font-size:13px; margin-top:${hatStufen(u) ? '10px' : '3px'};">${esc(s.vorgabe)}</div>
+      ${s.weiter ? `<div class="stufe-weiter">➜ Nächste Stufe, wenn ${esc(s.weiter)}</div>` : ''}
+      <button class="prog-info" data-act="progErklaerung">${ICONS.info} Erklärung${offen ? ' ausblenden' : ''}</button>
+      ${offen ? `<div class="prog-erklaerung">${esc(s.erklaerung)}</div>` : ''}
+      ${offen && s.achte ? `<div class="prog-achte"><b>Achte darauf:</b> ${esc(s.achte)}</div>` : ''}
     </div>
 
     ${block}
 
     <div class="card" style="margin-top:14px;">
-      <div class="section-h">${u.art === 'halten' ? 'Durchgänge abhaken' : 'Sätze abhaken'}</div>
+      <div class="section-h">${s.art === 'halten' ? 'Durchgänge abhaken' : 'Sätze abhaken'}</div>
       ${einheiten.map((label,k) => `
-        <button class="knie-einheit ${knieErledigt(i,k) ? 'done' : ''} ${k === aktuell ? 'jetzt' : ''}" data-act="knieHaken" data-idx="${k}">
-          <span class="knie-box">${knieErledigt(i,k) ? ICONS.check : ''}</span>
+        <button class="prog-einheit ${progErledigt(pid,i,k) ? 'done' : ''} ${k === aktuell ? 'jetzt' : ''}" data-act="progHaken" data-idx="${k}">
+          <span class="prog-box">${progErledigt(pid,i,k) ? ICONS.check : ''}</span>
           <span style="flex:1; min-width:0;">${esc(label)}</span>
-          ${u.art === 'halten' ? `<span class="muted" style="font-size:12px;">${knieTimerVorgabe(i)} Sek.</span>` : ''}
+          ${s.art === 'halten' && !s.einheitenNamen ? `<span class="muted" style="font-size:12px;">${progTimerVorgabe(pid,i)} Sek.</span>` : ''}
           ${k === aktuell ? `<span class="badge">jetzt</span>` : ''}
         </button>`).join('')}
     </div>
@@ -1935,13 +2231,13 @@ function renderKnieModal(){
     <div class="card" style="margin-top:14px;">
       <div class="section-h">Programm-Überblick</div>
       ${prog.uebungen.map((x,j) => {
-        const e = knieEinheiten(x);
-        const n = e.filter((_,k) => knieErledigt(j,k)).length;
-        return `<button class="knie-ueberblick ${j === i ? 'aktiv' : ''}" data-act="knieSpringen" data-idx="${j}">
+        const e = programmEinheiten(pid, j);
+        const n = e.filter((_,k) => progErledigt(pid,j,k)).length;
+        return `<button class="prog-ueberblick ${j === i ? 'aktiv' : ''}" data-act="progSpringen" data-idx="${j}">
           <span class="nr">${j+1}</span>
-          <span style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(x.name)}</span>
+          <span style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(x.name)}${hatStufen(x) ? ` <span class="muted" style="font-size:11px;">· Stufe ${stufenIndex(pid,j)+1}</span>` : ''}</span>
           <span class="muted" style="font-size:12px;">${n}/${e.length}</span>
-          ${n === e.length ? `<span class="knie-ok">${ICONS.check}</span>` : ''}
+          ${n === e.length ? `<span class="prog-ok">${ICONS.check}</span>` : ''}
         </button>`;
       }).join('')}
     </div>
@@ -1949,137 +2245,144 @@ function renderKnieModal(){
     <div class="muted" style="font-size:12px; margin-top:14px; text-align:center;">Dein Stand bleibt gemerkt, auch wenn du das Fenster schließt. Erst „Programm abschließen" speichert den Durchlauf mit Datum.</div>`;
 
   const footer = `<div style="display:flex; gap:10px;">
-      <button class="btn-ghost" style="width:auto; padding:13px 18px;" data-act="knieZurueck" ${i === 0 ? 'disabled' : ''} aria-label="Vorige Übung">‹</button>
+      <button class="btn-ghost" style="width:auto; padding:13px 18px;" data-act="progZurueck" ${i === 0 ? 'disabled' : ''} aria-label="Vorige Übung">‹</button>
       ${letzte
-        ? `<button class="btn-primary btn-compact" data-act="knieAbschliessen">${ICONS.check} Programm abschließen</button>`
-        : `<button class="btn-primary btn-compact" data-act="knieWeiter">Weiter ›</button>`}
+        ? `<button class="btn-primary btn-compact" data-act="progAbschliessen">${ICONS.check} Programm abschließen</button>`
+        : `<button class="btn-primary btn-compact" data-act="progWeiter">Weiter ›</button>`}
     </div>`;
 
-  return sheet(prog.name, {act:'knieSchliessen', label:'Schließen'}, null, body, footer);
+  return sheet(prog.name, {act:'progSchliessen', label:'Schließen'}, null, body, footer);
 }
 
 /* -------------------------------------------------------------------------
-   Timer des Knie-Programms
+   Timer der geführten Programme
    Bewusst getrennt vom Intervall-Timer: hier wird genau EINE Haltedauer
-   herunterzaehlt, ohne Runden und Pausen. Toene und Vibration kommen aus
+   heruntergezählt, ohne Runden und Pausen. Töne und Vibration kommen aus
    demselben Baukasten (timerTon/timerVibriert).
    ------------------------------------------------------------------------- */
-const knieTimer = { uebung:null, einheit:null, rest:0, gesamt:0, laeuft:false, intervalId:null };
-/// Haltedauer dieser Übung: die selbst eingestellte, sonst die vorgegebene.
-/// So gilt eine mit +10 verlängerte Dehnung für alle Durchgänge der Übung.
-function knieTimerVorgabe(uIdx){
-  const eigen = knieLauf.dauer && knieLauf.dauer[uIdx];
+const progTimer = { programmId:null, uebung:null, einheit:null, rest:0, gesamt:0, laeuft:false, intervalId:null };
+/// Haltedauer: die selbst eingestellte, sonst die der aktuellen Stufe.
+function progTimerVorgabe(progId, uIdx){
+  const eigen = lauf(progId).dauer[uIdx];
   if(eigen > 0) return eigen;
-  const u = KNIE_PROGRAMM.uebungen[uIdx];
-  return (u && u.dauer) || 30;
+  const s = aktiveStufe(progId, uIdx);
+  return (s && s.dauer) || 30;
 }
-function knieTimerStartPause(){
-  if(knieTimer.laeuft){ knieTimerPausiere(); return; }
-  const i = knieLauf.index;
-  const k = knieAktuelleEinheit(i);
-  if(k === null) return;                      // alle Durchgaenge dieser Uebung sind durch
-  if(knieTimer.uebung !== i || knieTimer.gesamt <= 0 || knieTimer.rest <= 0){
-    knieTimer.uebung = i;
-    knieTimer.gesamt = knieTimerVorgabe(i);
-    knieTimer.rest = knieTimer.gesamt;
+function progTimerStartPause(){
+  if(progTimer.laeuft){ progTimerPausiere(); return; }
+  const pid = (ui.modal && ui.modal.programmId) || 'knie';
+  const l = lauf(pid);
+  const i = l.index;
+  const k = progAktuelleEinheit(pid, i);
+  if(k === null) return;                      // alle Durchgänge dieser Übung sind durch
+  if(progTimer.programmId !== pid || progTimer.uebung !== i || progTimer.gesamt <= 0 || progTimer.rest <= 0){
+    progTimer.programmId = pid;
+    progTimer.uebung = i;
+    progTimer.gesamt = progTimerVorgabe(pid, i);
+    progTimer.rest = progTimer.gesamt;
   }
-  knieTimer.einheit = k;
-  knieTimer.laeuft = true;
-  if(!knieLauf.startZeit){ knieLauf.startZeit = Date.now(); saveKnieLauf(); }
+  progTimer.einheit = k;
+  progTimer.laeuft = true;
+  if(!l.startZeit){ l.startZeit = Date.now(); saveLauf(); }
   audioAufwecken();
   timerTon('start');
-  knieTimer.intervalId = setInterval(knieTimerTick, 1000);
-  knieTimerAnzeige();
+  progTimer.intervalId = setInterval(progTimerTick, 1000);
+  progTimerAnzeige();
 }
-function knieTimerPausiere(){
-  knieTimer.laeuft = false;
-  if(knieTimer.intervalId){ clearInterval(knieTimer.intervalId); knieTimer.intervalId = null; }
-  knieTimerAnzeige();
+function progTimerPausiere(){
+  progTimer.laeuft = false;
+  if(progTimer.intervalId){ clearInterval(progTimer.intervalId); progTimer.intervalId = null; }
+  progTimerAnzeige();
 }
-function knieTimerStopp(){
-  knieTimerPausiere();
-  knieTimer.uebung = null; knieTimer.einheit = null; knieTimer.rest = 0; knieTimer.gesamt = 0;
+function progTimerStopp(){
+  progTimerPausiere();
+  progTimer.programmId = null; progTimer.uebung = null; progTimer.einheit = null; progTimer.rest = 0; progTimer.gesamt = 0;
 }
-/// Haltedauer vor oder waehrend des Laufs anpassen (z.B. 30 -> 40 Sek.).
-function knieTimerAnpassen(delta){
-  const i = knieLauf.index;
-  if(knieTimer.uebung !== i || knieTimer.gesamt <= 0){
-    knieTimer.uebung = i;
-    knieTimer.einheit = knieAktuelleEinheit(i);
-    knieTimer.gesamt = knieTimerVorgabe(i);
-    knieTimer.rest = knieTimer.gesamt;
+/// Haltedauer vor oder während des Laufs anpassen (z.B. 30 -> 40 Sek.).
+function progTimerAnpassen(delta){
+  const pid = (ui.modal && ui.modal.programmId) || 'knie';
+  const i = lauf(pid).index;
+  if(progTimer.programmId !== pid || progTimer.uebung !== i || progTimer.gesamt <= 0){
+    progTimer.programmId = pid;
+    progTimer.uebung = i;
+    progTimer.einheit = progAktuelleEinheit(pid, i);
+    progTimer.gesamt = progTimerVorgabe(pid, i);
+    progTimer.rest = progTimer.gesamt;
   }
-  // Solange der Timer noch nicht gelaufen ist, wird die Vorgabe selbst geaendert
-  // (Balken bleibt leer, Knopf sagt weiterhin „Start"). Waehrend einer Pause
+  // Solange der Timer noch nicht gelaufen ist, wird die Vorgabe selbst geändert
+  // (Balken bleibt leer, Knopf sagt weiterhin „Start"). Während einer Pause
   // mitten im Halten wird dagegen nur die Restzeit verschoben.
-  const nochNichtGestartet = !knieTimer.laeuft && knieTimer.rest === knieTimer.gesamt;
-  knieTimer.rest = Math.max(5, Math.min(600, knieTimer.rest + delta));
-  if(nochNichtGestartet || knieTimer.rest > knieTimer.gesamt) knieTimer.gesamt = knieTimer.rest;
+  const nochNichtGestartet = !progTimer.laeuft && progTimer.rest === progTimer.gesamt;
+  progTimer.rest = Math.max(5, Math.min(600, progTimer.rest + delta));
+  if(nochNichtGestartet || progTimer.rest > progTimer.gesamt) progTimer.gesamt = progTimer.rest;
   if(nochNichtGestartet){
-    knieLauf.dauer = knieLauf.dauer || {};
-    knieLauf.dauer[i] = knieTimer.rest;      // gilt ab jetzt für alle Durchgänge dieser Übung
-    saveKnieLauf();
+    lauf(pid).dauer[i] = progTimer.rest;      // gilt ab jetzt für alle Durchgänge dieser Übung
+    saveLauf();
     render();
     return;
   }
-  knieTimerAnzeige();
+  progTimerAnzeige();
 }
-function knieTimerTick(){
-  knieTimer.rest--;
-  if(knieTimer.rest > 0){
-    if(knieTimer.rest <= 3) timerTon('countdown');
-    knieTimerAnzeige();
+function progTimerTick(){
+  progTimer.rest--;
+  if(progTimer.rest > 0){
+    if(progTimer.rest <= 3) timerTon('countdown');
+    progTimerAnzeige();
     return;
   }
   // Haltezeit ist um: Ton, Vibration, Einheit abhaken und weiterschalten.
-  knieTimer.laeuft = false;
-  if(knieTimer.intervalId){ clearInterval(knieTimer.intervalId); knieTimer.intervalId = null; }
-  knieTimer.rest = 0;
+  progTimer.laeuft = false;
+  if(progTimer.intervalId){ clearInterval(progTimer.intervalId); progTimer.intervalId = null; }
+  progTimer.rest = 0;
   timerTon('fertig');
   timerVibriert([140, 90, 140, 90, 220]);
-  const i = knieTimer.uebung, k = knieTimer.einheit;
-  if(i !== null && k !== null && !knieErledigt(i,k)) knieHakenUm(i,k);
-  knieTimer.uebung = null; knieTimer.einheit = null; knieTimer.gesamt = 0;
+  const pid = progTimer.programmId, i = progTimer.uebung, k = progTimer.einheit;
+  if(pid && i !== null && k !== null && !progErledigt(pid, i, k)) progHakenUm(pid, i, k);
+  progTimer.programmId = null; progTimer.uebung = null; progTimer.einheit = null; progTimer.gesamt = 0;
   render();
 }
-/// Aktualisiert nur Zeit, Balken und Knopf - ein render() pro Sekunde wuerde
-/// die Scrollposition im Fenster stoeren.
-function knieTimerAnzeige(){
-  const zeitEl = document.getElementById('knieZeit');
+/// Aktualisiert nur Zeit, Balken und Knopf - ein render() pro Sekunde würde
+/// die Scrollposition im Fenster stören.
+function progTimerAnzeige(){
+  const zeitEl = document.getElementById('progZeit');
   if(!zeitEl) return;
-  zeitEl.textContent = mmss(knieTimer.rest);
-  const bar = document.getElementById('knieBar');
-  if(bar) bar.style.width = (knieTimer.gesamt > 0 ? (100 - (knieTimer.rest/knieTimer.gesamt)*100) : 0) + '%';
-  const btn = document.getElementById('knieStartBtn');
-  if(btn) btn.textContent = knieStartLabel();
+  zeitEl.textContent = mmss(progTimer.rest);
+  const bar = document.getElementById('progBar');
+  if(bar) bar.style.width = (progTimer.gesamt > 0 ? (100 - (progTimer.rest/progTimer.gesamt)*100) : 0) + '%';
+  const btn = document.getElementById('progStartBtn');
+  if(btn) btn.textContent = progStartLabel();
 }
 
-/// Speichert den Durchlauf mit Datum in `state.mobilityEintraege`. Die normale
+/// Speichert den Durchlauf mit Datum in `state.programmEintraege`. Die normale
 /// Trainings-Historie und alle Statistiken bleiben davon unberührt.
-function knieAbschliessen(){
-  const prog = KNIE_PROGRAMM;
+function progAbschliessen(){
+  const pid  = (ui.modal && ui.modal.programmId) || 'knie';
+  const prog = findeProgramm(pid);
   let erledigt = 0, gesamt = 0;
   const uebungen = prog.uebungen.map((u,i) => {
-    const e = knieEinheiten(u);
-    const n = e.filter((_,k) => knieErledigt(i,k)).length;
+    const e = programmEinheiten(pid, i);
+    const s = aktiveStufe(pid, i);
+    const n = e.filter((_,k) => progErledigt(pid,i,k)).length;
     erledigt += n; gesamt += e.length;
-    return { name: u.name, art: u.art, vorgabe: u.vorgabe, erledigt: n, gesamt: e.length };
+    return { name: u.name, stufe: hatStufen(u) ? s.name : null, stufeNr: hatStufen(u) ? stufenIndex(pid,i)+1 : null,
+             vorgabe: s.vorgabe, erledigt: n, gesamt: e.length };
   });
   if(erledigt === 0){
     alert('Du hast noch keine Übung abgehakt. Hak mindestens eine Einheit ab, dann kann der Durchlauf gespeichert werden.');
     return;
   }
   if(erledigt < gesamt && !confirm(`Du hast ${erledigt} von ${gesamt} Einheiten abgehakt. Durchlauf mit diesem Stand speichern? Der Eintrag erscheint dann mit dem heutigen Datum in der Historie.`)) return;
-  const minuten = knieLauf.startZeit ? Math.max(1, Math.round((Date.now() - knieLauf.startZeit)/60000)) : null;
-  state.mobilityEintraege = state.mobilityEintraege || [];
-  state.mobilityEintraege.unshift({
-    id: uid(), typ: 'mobility',
-    programmId: prog.id, programmName: prog.name,
+  const start = lauf(pid).startZeit;
+  const minuten = start ? Math.max(1, Math.round((Date.now() - start)/60000)) : null;
+  state.programmEintraege = state.programmEintraege || [];
+  state.programmEintraege.unshift({
+    id: uid(), typ: 'programm',
+    programmId: prog.id, programmName: prog.name, icon: prog.icon || '▶',
     datum: new Date().toISOString(),
     erledigt, gesamt, minuten, uebungen,
   });
-  knieTimerStopp();
-  knieLaufZuruecksetzen();
+  progTimerStopp();
+  laufZuruecksetzen(pid);
   ui.modal = null;
   saveState(); render();
   toast(`${prog.name} gespeichert – ${erledigt} von ${gesamt} Einheiten`);
@@ -2432,8 +2735,8 @@ function sicherungEinspielen(text){
     return;
   }
   const anz = Array.isArray(daten.eintraege) ? daten.eintraege.length : 0;
-  const anzMob = Array.isArray(daten.mobilityEintraege) ? daten.mobilityEintraege.length : 0;
-  const mobText = anzMob ? ` und ${anzMob} Mobility-${anzMob === 1 ? 'Durchlauf' : 'Durchläufen'}` : '';
+  const anzMob = Array.isArray(daten.programmEintraege) ? daten.programmEintraege.length : (Array.isArray(daten.mobilityEintraege) ? daten.mobilityEintraege.length : 0);
+  const mobText = anzMob ? ` und ${anzMob} Programm-${anzMob === 1 ? 'Durchlauf' : 'Durchläufen'}` : '';
   if(!confirm(`Sicherung mit ${anz} Trainings-Einträgen${mobText} einspielen? ALLE Daten auf diesem Gerät werden dadurch ersetzt.`)) return;
   state = migriereState(daten);
   ui.eingaben = {}; ui.trainingTagIndex = 0; ui.trainingAnsicht = 'auswahl'; ui.modal = null;
@@ -2539,9 +2842,9 @@ function onRootClick(e){
       }
       break;
     }
-    case 'mobilityLoeschen': {
-      if(confirm('Diesen Mobility-Durchlauf wirklich aus der Historie löschen? Das kann nicht rückgängig gemacht werden.')){
-        state.mobilityEintraege = (state.mobilityEintraege || []).filter(e => e.id !== arg);
+    case 'programmLoeschen': {
+      if(confirm('Diesen Durchlauf wirklich aus der Historie löschen? Das kann nicht rückgängig gemacht werden.')){
+        state.programmEintraege = (state.programmEintraege || []).filter(e => e.id !== arg);
         saveState(); render();
       }
       break;
@@ -2655,50 +2958,67 @@ function onRootClick(e){
       break;
     }
 
-    /* ---- Geführtes Knie-Programm ---- */
-    case 'knieStart': {
+    /* ---- Geführte Programme ---- */
+    case 'progStart': {
       ui.trainingMenuOpen = false;
-      knieLauf.erklaerungOffen = false;
-      ui.modal = { type:'knie' };
+      ui.modal = { type:'prog', programmId: el.dataset.prog || 'knie', erklaerung:false };
       render(); break;
     }
-    case 'knieErklaerung': { knieLauf.erklaerungOffen = !knieLauf.erklaerungOffen; render(); break; }
-    case 'knieHaken': {
-      knieHakenUm(knieLauf.index, parseInt(el.dataset.idx,10));
-      knieTimerStopp();
+    case 'progErklaerung': { ui.modal.erklaerung = !ui.modal.erklaerung; render(); break; }
+    case 'progStufe': {
+      const pid = ui.modal.programmId;
+      const i = lauf(pid).index;
+      const hatteHaken = setzeStufe(pid, i, stufenIndex(pid, i) + (parseInt(el.dataset.delta,10) || 0));
+      progTimerStopp();
+      render();
+      if(hatteHaken) toast('Stufe gewechselt – die Haken dieser Übung wurden zurückgesetzt');
+      break;
+    }
+    case 'progHaken': {
+      const pid = ui.modal.programmId;
+      progHakenUm(pid, lauf(pid).index, parseInt(el.dataset.idx,10));
+      progTimerStopp();
       render(); break;
     }
-    case 'knieWeiter': {
-      knieTimerStopp();
-      knieLauf.index = Math.min(KNIE_PROGRAMM.uebungen.length-1, knieLauf.index + 1);
-      knieLauf.erklaerungOffen = false;
-      saveKnieLauf(); render(); break;
+    case 'progWeiter': {
+      const pid = ui.modal.programmId;
+      progTimerStopp();
+      const l = lauf(pid);
+      l.index = Math.min(findeProgramm(pid).uebungen.length-1, l.index + 1);
+      ui.modal.erklaerung = false;
+      saveLauf(); render(); break;
     }
-    case 'knieZurueck': {
-      knieTimerStopp();
-      knieLauf.index = Math.max(0, knieLauf.index - 1);
-      knieLauf.erklaerungOffen = false;
-      saveKnieLauf(); render(); break;
+    case 'progZurueck': {
+      const pid = ui.modal.programmId;
+      progTimerStopp();
+      const l = lauf(pid);
+      l.index = Math.max(0, l.index - 1);
+      ui.modal.erklaerung = false;
+      saveLauf(); render(); break;
     }
-    case 'knieSpringen': {
-      knieTimerStopp();
-      knieLauf.index = Math.max(0, Math.min(KNIE_PROGRAMM.uebungen.length-1, parseInt(el.dataset.idx,10) || 0));
-      knieLauf.erklaerungOffen = false;
-      saveKnieLauf(); render(); break;
+    case 'progSpringen': {
+      const pid = ui.modal.programmId;
+      progTimerStopp();
+      const l = lauf(pid);
+      l.index = Math.max(0, Math.min(findeProgramm(pid).uebungen.length-1, parseInt(el.dataset.idx,10) || 0));
+      ui.modal.erklaerung = false;
+      saveLauf(); render(); break;
     }
-    case 'knieTimerStartPause': knieTimerStartPause(); break;
-    case 'knieTimerAnpassen': knieTimerAnpassen(parseInt(el.dataset.delta,10) || 0); break;
-    case 'knieSchliessen': {
-      knieTimerStopp();
-      const f = knieFortschritt();
+    case 'progTimerStartPause': progTimerStartPause(); break;
+    case 'progTimerAnpassen': progTimerAnpassen(parseInt(el.dataset.delta,10) || 0); break;
+    case 'progSchliessen': {
+      const pid = ui.modal.programmId;
+      progTimerStopp();
+      const f = progFortschritt(pid);
       closeModal();
       if(f.erledigt > 0 && f.erledigt < f.gesamt) toast('Stand gemerkt – du kannst später weitermachen');
       break;
     }
-    case 'knieAbschliessen': knieAbschliessen(); break;
-    case 'knieZuruecksetzen': {
-      if(!confirm('Angefangenen Durchlauf verwerfen? Damit werden nur die gesetzten Haken gelöscht – bereits abgeschlossene und gespeicherte Durchläufe bleiben erhalten.')) break;
-      knieTimerStopp(); knieLaufZuruecksetzen(); render(); break;
+    case 'progAbschliessen': progAbschliessen(); break;
+    case 'progZuruecksetzen': {
+      const pid = el.dataset.prog || 'knie';
+      if(!confirm('Angefangenen Durchlauf verwerfen? Damit werden nur die gesetzten Haken gelöscht – deine eingestellten Stufen und bereits gespeicherte Durchläufe bleiben erhalten.')) break;
+      progTimerStopp(); laufZuruecksetzen(pid); render(); break;
     }
 
     /* ---- Daten & Sicherung ---- */
